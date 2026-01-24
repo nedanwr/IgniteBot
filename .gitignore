@@ -32,6 +32,13 @@ dist
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.pnpm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+
+# IDE
+.idea
 
 # Misc
 .DS_Store
