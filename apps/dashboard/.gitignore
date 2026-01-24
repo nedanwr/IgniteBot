@@ -1,0 +1,5 @@
+# next.js
+next-env.d.ts
+
+# typescript
+*.tsbuildinfo
