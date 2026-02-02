@@ -25,6 +25,7 @@ export default defineSchema({
     icon: v.optional(v.string()),
     owner: v.boolean(),
     permissions: v.string(),
+    hasBot: v.boolean(),
     // Users who have access to this guild
     userId: v.id("users")
   })
