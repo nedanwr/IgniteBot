@@ -14,18 +14,21 @@ interface DiscordGuild {
   name: string;
   icon: string | null;
   owner: boolean;
-  permissions: string;
+  permissions: string | number;
 }
 
 // MANAGE_GUILD permission bit
 const MANAGE_GUILD = 0x20n;
 
-function canManageGuild(permissions: string): boolean {
+function canManageGuild(permissions: string | number): boolean {
   return (BigInt(permissions) & MANAGE_GUILD) === MANAGE_GUILD;
 }
 
 async function fetchAndSyncGuilds(
-  ctx: { runQuery: typeof action.prototype; runMutation: typeof action.prototype },
+  ctx: {
+    runQuery: typeof action.prototype;
+    runMutation: typeof action.prototype;
+  },
   userId: string
 ) {
   const user = await ctx.runQuery(internal.guilds.getUser, { userId });
@@ -57,7 +60,7 @@ async function fetchAndSyncGuilds(
       name: g.name,
       icon: g.icon,
       owner: g.owner,
-      permissions: g.permissions
+      permissions: String(g.permissions)
     }))
   });
 
