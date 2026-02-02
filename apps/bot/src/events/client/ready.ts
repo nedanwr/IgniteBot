@@ -6,6 +6,7 @@ import type { Bot } from "~/struct/Client";
 import { Logger } from "~/services/logger";
 import { PluginManager } from "~/managers/PluginManager";
 import { AppConfig } from "~/services/config";
+import { convex, api } from "~/services/convex";
 
 export default class ReadyEvent extends Event<
   Events.ClientReady,
@@ -37,6 +38,23 @@ export default class ReadyEvent extends Event<
       }).pipe(
         Effect.catchAll((error) =>
           logger.error("Failed to set presence:", error)
+        )
+      );
+
+      // Sync guild bot status with Convex
+      const guildIds = Array.from(client.guilds.cache.keys());
+      yield* Effect.tryPromise({
+        try: () =>
+          convex.mutation(api.guilds.botSyncGuilds, { discordIds: guildIds }),
+        catch: (error) => error
+      }).pipe(
+        Effect.tap((updated) =>
+          logger.info(
+            `Synced ${guildIds.length} guilds, updated ${updated} records`
+          )
+        ),
+        Effect.catchAll((error) =>
+          logger.error("Failed to sync guilds to Convex:", error)
         )
       );
 
