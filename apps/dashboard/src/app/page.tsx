@@ -1,89 +1,29 @@
+"use client";
+
 import Link from "next/link";
-import {
-  Users,
-  Settings,
-  ChevronRight,
-  Sparkles,
-  LogOut,
-  Crown
-} from "lucide-react";
+import { Settings, ChevronRight, Sparkles, LogOut, Crown } from "lucide-react";
+import { useQuery } from "convex/react";
+import { useAuthActions } from "@convex-dev/auth/react";
+import { api } from "@ignite-bot/convex";
+
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 
-// Placeholder guild data - will be replaced with real data from Discord API
-const guilds = [
-  {
-    id: "1",
-    name: "Ethereal Studios",
-    icon: "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=128&h=128&fit=crop",
-    memberCount: 12847,
-    isOwner: true,
-    hasBot: true
-  },
-  {
-    id: "2",
-    name: "Midnight Developers",
-    icon: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=128&h=128&fit=crop",
-    memberCount: 3521,
-    isOwner: false,
-    hasBot: true
-  },
-  {
-    id: "3",
-    name: "Creative Collective",
-    icon: "https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=128&h=128&fit=crop",
-    memberCount: 891,
-    isOwner: false,
-    hasBot: false
-  },
-  {
-    id: "4",
-    name: "Tech Enthusiasts",
-    icon: "https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=128&h=128&fit=crop",
-    memberCount: 24103,
-    isOwner: false,
-    hasBot: true
-  },
-  {
-    id: "5",
-    name: "Gaming Nexus",
-    icon: "https://images.unsplash.com/photo-1614624532983-4ce03382d63d?w=128&h=128&fit=crop",
-    memberCount: 7892,
-    isOwner: true,
-    hasBot: true
-  },
-  {
-    id: "6",
-    name: "Art & Design Hub",
-    icon: null,
-    memberCount: 456,
-    isOwner: false,
-    hasBot: false
-  }
-];
-
-// Placeholder user data
-const user = {
-  name: "Alexander",
-  avatar:
-    "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=128&h=128&fit=crop"
+type Guild = {
+  _id: string;
+  discordId: string;
+  name: string;
+  icon?: string;
+  owner: boolean;
+  permissions: string;
 };
 
-function formatMemberCount(count: number): string {
-  if (count >= 1000) {
-    return `${(count / 1000).toFixed(1)}k`;
-  }
-  return count.toString();
+function getGuildIconUrl(guildId: string, iconHash: string): string {
+  return `https://cdn.discordapp.com/icons/${guildId}/${iconHash}.webp`;
 }
 
-function GuildCard({
-  guild,
-  index
-}: {
-  guild: (typeof guilds)[0];
-  index: number;
-}) {
+function GuildCard({ guild, index }: { guild: Guild; index: number }) {
   const initials = guild.name
     .split(" ")
     .map((w) => w[0])
@@ -91,29 +31,33 @@ function GuildCard({
     .slice(0, 2)
     .toUpperCase();
 
-  const staggerClass = `stagger-${index + 1}`;
+  const staggerClass = `stagger-${Math.min(index + 1, 8)}`;
+  const iconUrl = guild.icon
+    ? getGuildIconUrl(guild.discordId, guild.icon)
+    : null;
+
+  // TODO: Track which guilds have the bot installed
+  const hasBot = false;
 
   return (
     <Link
-      href={guild.hasBot ? `/guild/${guild.id}` : "#"}
+      href={hasBot ? `/guild/${guild.discordId}` : "#"}
       className={`group animate-fade-up relative block ${staggerClass}`}
     >
       <div
-        className={`border-border/50 bg-card relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 ease-out ${guild.hasBot ? "hover-lift hover:border-primary/30 hover:bg-card/80 cursor-pointer" : "cursor-not-allowed opacity-60"} `}
+        className={`border-border/50 bg-card relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 ease-out ${hasBot ? "hover-lift hover:border-primary/30 hover:bg-card/80 cursor-pointer" : "cursor-not-allowed opacity-60"} `}
       >
-        <div className="from-primary/5 pointer-events-none absolute inset-0 bg-gradient-to-br via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        <div className="from-primary/5 pointer-events-none absolute inset-0 bg-linear-to-br via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
         <div className="relative flex items-start gap-4">
           <div className="relative">
             <Avatar className="ring-border/50 group-hover:ring-primary/30 size-14 rounded-xl ring-2 transition-all duration-300">
-              {guild.icon ? (
-                <AvatarImage src={guild.icon} alt={guild.name} />
-              ) : null}
+              {iconUrl ? <AvatarImage src={iconUrl} alt={guild.name} /> : null}
               <AvatarFallback className="bg-secondary rounded-xl text-lg font-medium">
                 {initials}
               </AvatarFallback>
             </Avatar>
-            {guild.isOwner && (
+            {guild.owner && (
               <div className="bg-primary text-primary-foreground absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full shadow-lg">
                 <Crown className="size-3" />
               </div>
@@ -124,14 +68,10 @@ function GuildCard({
             <h3 className="text-foreground group-hover:text-primary truncate text-lg font-medium transition-colors">
               {guild.name}
             </h3>
-            <div className="text-muted-foreground mt-1.5 flex items-center gap-1.5 text-sm">
-              <Users className="size-3.5" />
-              {formatMemberCount(guild.memberCount)} members
-            </div>
           </div>
 
           <div className="flex items-center">
-            {guild.hasBot ? (
+            {hasBot ? (
               <div className="text-muted-foreground group-hover:text-primary flex items-center gap-2 transition-colors">
                 <Settings className="size-4 transition-transform duration-300 group-hover:rotate-45" />
                 <ChevronRight className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
@@ -148,8 +88,8 @@ function GuildCard({
           </div>
         </div>
 
-        {guild.hasBot && (
-          <div className="via-primary/40 absolute right-6 bottom-0 left-6 h-px bg-gradient-to-r from-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        {hasBot && (
+          <div className="via-primary/40 absolute right-6 bottom-0 left-6 h-px bg-linear-to-r from-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         )}
       </div>
     </Link>
@@ -157,6 +97,16 @@ function GuildCard({
 }
 
 export default function DashboardPage() {
+  const user = useQuery(api.users.currentUser);
+  const guilds = useQuery(api.guilds.listGuilds);
+  const { signOut } = useAuthActions();
+
+  const displayName = user?.name ?? user?.username ?? "User";
+  const initials = displayName[0]?.toUpperCase() ?? "U";
+
+  // TODO: Track which guilds have the bot installed
+  const guildsWithBot = 0;
+
   return (
     <div className="grain min-h-screen">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
@@ -180,16 +130,19 @@ export default function DashboardPage() {
               <span className="text-muted-foreground text-sm">
                 Welcome back,
               </span>
-              <span className="font-medium">{user.name}</span>
+              <span className="font-medium">{displayName}</span>
             </div>
             <Avatar className="ring-border/50 hover:ring-primary/30 ring-2 transition-all">
-              <AvatarImage src={user.avatar} alt={user.name} />
-              <AvatarFallback>{user.name[0]}</AvatarFallback>
+              {user?.image && (
+                <AvatarImage src={user.image} alt={displayName} />
+              )}
+              <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
             <Button
               variant="ghost"
               size="icon"
               className="text-muted-foreground size-9"
+              onClick={() => void signOut()}
             >
               <LogOut className="size-4" />
             </Button>
@@ -212,7 +165,7 @@ export default function DashboardPage() {
             <div className="size-2 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50" />
             <span className="text-muted-foreground">
               <span className="text-foreground font-medium">
-                {guilds.filter((g) => g.hasBot).length}
+                {guildsWithBot}
               </span>{" "}
               servers with Ignite
             </span>
@@ -221,7 +174,7 @@ export default function DashboardPage() {
             <div className="bg-primary shadow-primary/50 size-2 rounded-full shadow-lg" />
             <span className="text-muted-foreground">
               <span className="text-foreground font-medium">
-                {guilds.length}
+                {guilds?.length ?? 0}
               </span>{" "}
               total servers
             </span>
@@ -229,8 +182,8 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {guilds.map((guild, index) => (
-            <GuildCard key={guild.id} guild={guild} index={index} />
+          {guilds?.map((guild, index) => (
+            <GuildCard key={guild._id} guild={guild} index={index} />
           ))}
         </div>
 
@@ -247,7 +200,7 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      <div className="via-primary/20 pointer-events-none fixed right-0 bottom-0 left-0 h-px bg-gradient-to-r from-transparent to-transparent" />
+      <div className="via-primary/20 pointer-events-none fixed right-0 bottom-0 left-0 h-px bg-linear-to-r from-transparent to-transparent" />
     </div>
   );
 }
