@@ -132,6 +132,7 @@ export const syncGuilds = internalMutation({
           icon: guild.icon ?? undefined,
           owner: guild.owner,
           permissions: guild.permissions,
+          hasBot: false,
           userId
         });
       }
