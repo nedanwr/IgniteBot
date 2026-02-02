@@ -4,6 +4,7 @@ import {
   internalAction,
   internalMutation,
   internalQuery,
+  mutation,
   query
 } from "./_generated/server";
 import { internal } from "./_generated/api";
@@ -152,5 +153,60 @@ export const listGuilds = query({
       .query("guilds")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
+  }
+});
+
+// Bot mutations - called when the bot joins/leaves a guild
+export const botJoinedGuild = mutation({
+  args: { discordId: v.string() },
+  handler: async (ctx, { discordId }) => {
+    const guilds = await ctx.db
+      .query("guilds")
+      .withIndex("by_discord_id", (q) => q.eq("discordId", discordId))
+      .collect();
+
+    for (const guild of guilds) {
+      await ctx.db.patch(guild._id, { hasBot: true });
+    }
+
+    return guilds.length;
+  }
+});
+
+export const botLeftGuild = mutation({
+  args: { discordId: v.string() },
+  handler: async (ctx, { discordId }) => {
+    const guilds = await ctx.db
+      .query("guilds")
+      .withIndex("by_discord_id", (q) => q.eq("discordId", discordId))
+      .collect();
+
+    for (const guild of guilds) {
+      await ctx.db.patch(guild._id, { hasBot: false });
+    }
+
+    return guilds.length;
+  }
+});
+
+// Sync all guilds the bot is currently in (called on bot startup)
+export const botSyncGuilds = mutation({
+  args: { discordIds: v.array(v.string()) },
+  handler: async (ctx, { discordIds }) => {
+    const botGuildIds = new Set(discordIds);
+
+    // Get all guilds in the database
+    const allGuilds = await ctx.db.query("guilds").collect();
+
+    let updated = 0;
+    for (const guild of allGuilds) {
+      const shouldHaveBot = botGuildIds.has(guild.discordId);
+      if (guild.hasBot !== shouldHaveBot) {
+        await ctx.db.patch(guild._id, { hasBot: shouldHaveBot });
+        updated++;
+      }
+    }
+
+    return updated;
   }
 });
