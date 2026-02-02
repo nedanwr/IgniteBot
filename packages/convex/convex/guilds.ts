@@ -110,31 +110,19 @@ export const syncGuilds = internalMutation({
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
 
-    const existingByDiscordId = new Map(
-      existingGuilds.map((g) => [g.discordId, g])
-    );
+    const existingDiscordIds = new Set(existingGuilds.map((g) => g.discordId));
     const incomingDiscordIds = new Set(guilds.map((g) => g.discordId));
 
-    // Delete guilds that are no longer in the user's list
+    // Remove guilds the user no longer has access to
     for (const existing of existingGuilds) {
       if (!incomingDiscordIds.has(existing.discordId)) {
         await ctx.db.delete(existing._id);
       }
     }
 
-    // Upsert guilds
+    // Add new guilds
     for (const guild of guilds) {
-      const existing = existingByDiscordId.get(guild.discordId);
-      if (existing) {
-        // Update existing guild
-        await ctx.db.patch(existing._id, {
-          name: guild.name,
-          icon: guild.icon ?? undefined,
-          owner: guild.owner,
-          permissions: guild.permissions
-        });
-      } else {
-        // Insert new guild
+      if (!existingDiscordIds.has(guild.discordId)) {
         await ctx.db.insert("guilds", {
           discordId: guild.discordId,
           name: guild.name,
