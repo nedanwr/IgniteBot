@@ -1,8 +1,17 @@
+import type { Metadata } from "next";
 import { DM_Sans, Instrument_Sans } from "next/font/google";
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 
 import { AppConvexProvider } from "~/integrations/convex/provider";
 import "~/styles/globals.css";
+
+export const metadata: Metadata = {
+  title: {
+    default: "Ignite",
+    template: "%s"
+  },
+  description: "Manage your Discord servers with Ignite"
+};
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
