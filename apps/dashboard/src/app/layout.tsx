@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
 import { DM_Sans, Instrument_Sans } from "next/font/google";
+import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 
+import { AppConvexProvider } from "~/integrations/convex/provider";
 import "~/styles/globals.css";
 
 const dmSans = DM_Sans({
@@ -13,17 +14,19 @@ const instrumentSans = Instrument_Sans({
   variable: "--font-heading"
 });
 
-export const metadata: Metadata = {
-  title: "Ignite Dashboard",
-  description: "Manage your Discord servers with Ignite"
-};
-
 export default function RootLayout({
   children
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${dmSans.variable} ${instrumentSans.variable}`}>
-      <body>{children}</body>
-    </html>
+    <ConvexAuthNextjsServerProvider>
+      <html
+        lang="en"
+        className={`${dmSans.variable} ${instrumentSans.variable}`}
+      >
+        <body>
+          <AppConvexProvider>{children}</AppConvexProvider>
+        </body>
+      </html>
+    </ConvexAuthNextjsServerProvider>
   );
 }
