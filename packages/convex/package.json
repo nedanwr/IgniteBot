@@ -3,6 +3,13 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./convex/_generated/api.d.ts",
+      "import": "./convex/_generated/api.js",
+      "require": "./convex/_generated/api.js"
+    }
+  },
   "scripts": {
     "dev": "convex dev",
     "deploy": "convex deploy"
