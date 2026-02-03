@@ -6,7 +6,11 @@ import type { Bot } from "~/struct/Client";
 import { Logger } from "~/services/logger";
 import { convex, api } from "~/services/convex";
 
-const COMMAND_PREFIX = "!";
+// Check if first character could be a command prefix
+// Matches common prefix characters: ! ? . - > $ % & * / \ ~ , ; : + = @
+function isPotentialPrefix(char: string): boolean {
+  return /^[^\w\s]$/.test(char);
+}
 
 export default class MessageCreateEvent extends Event<
   Events.MessageCreate,
@@ -24,38 +28,33 @@ export default class MessageCreateEvent extends Event<
       // Ignore bots and DMs
       if (message.author.bot || !message.guild) return;
 
-      // Check if message starts with command prefix
-      if (!message.content.startsWith(COMMAND_PREFIX)) return;
+      // Quick check: does this look like it could be a command?
+      const firstChar = message.content[0];
+      if (!firstChar || !isPotentialPrefix(firstChar)) return;
 
       const logger = yield* Logger;
 
-      // Extract command name
-      const args = message.content.slice(COMMAND_PREFIX.length).trim().split(/\s+/);
-      const commandName = args[0]?.toLowerCase();
-
-      if (!commandName) return;
-
-      // Look up the command in Convex
+      // Resolve command via Convex (checks prefix + looks up command in one query)
       const command = yield* Effect.tryPromise({
         try: () =>
-          convex.query(api.commands.getByGuildAndName, {
+          convex.query(api.guildSettings.resolveCommand, {
             guildDiscordId: message.guild!.id,
-            name: commandName
+            messageContent: message.content
           }),
         catch: (error) => error
       }).pipe(
         Effect.catchAll((error) => {
           return Effect.gen(function* () {
-            yield* logger.error("Failed to fetch command:", error);
+            yield* logger.error("Failed to resolve command:", error);
             return null;
           });
         })
       );
 
-      if (!command || !command.enabled) return;
+      if (!command) return;
 
       yield* logger.debug(
-        `Executing command !${commandName} in ${message.guild.name}`
+        `Executing command !${command.name} in ${message.guild.name}`
       );
 
       // Send the response
