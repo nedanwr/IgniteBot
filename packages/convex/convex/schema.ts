@@ -43,5 +43,10 @@ export default defineSchema({
     updatedAt: v.float64()
   })
     .index("by_guild", ["guildDiscordId"])
-    .index("by_guild_and_name", ["guildDiscordId", "name"])
+    .index("by_guild_and_name", ["guildDiscordId", "name"]),
+
+  guildSettings: defineTable({
+    guildDiscordId: v.string(),
+    prefix: v.string()
+  }).index("by_guild", ["guildDiscordId"])
 });
