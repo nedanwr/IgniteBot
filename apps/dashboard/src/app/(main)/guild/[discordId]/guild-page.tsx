@@ -258,7 +258,7 @@ export function GuildPage({ discordId }: { discordId: string }) {
               icon={<Settings className="size-6" />}
               title="Server Settings"
               description="Configure general bot settings for your server"
-              comingSoon
+              href={`/guild/${discordId}/settings`}
             />
           </div>
         </div>
