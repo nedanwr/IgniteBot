@@ -7,6 +7,7 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "@ignite-bot/convex";
 
 import { env } from "~/env";
+import { getGuildIconUrl } from "~/lib/discord";
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -32,10 +33,6 @@ function getBotInviteUrl(guildId: string): string {
     disable_guild_select: "true"
   });
   return `https://discord.com/oauth2/authorize?${params.toString()}`;
-}
-
-function getGuildIconUrl(guildId: string, iconHash: string): string {
-  return `https://cdn.discordapp.com/icons/${guildId}/${iconHash}.webp`;
 }
 
 function GuildCard({ guild, index }: { guild: Guild; index: number }) {
