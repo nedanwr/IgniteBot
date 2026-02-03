@@ -156,6 +156,23 @@ export const listGuilds = query({
   }
 });
 
+export const getGuild = query({
+  args: { discordId: v.string() },
+  handler: async (ctx, { discordId }) => {
+    const userId = await auth.getUserId(ctx);
+    if (!userId) {
+      return null;
+    }
+
+    return await ctx.db
+      .query("guilds")
+      .withIndex("by_user_and_discord", (q) =>
+        q.eq("userId", userId).eq("discordId", discordId)
+      )
+      .first();
+  }
+});
+
 // Bot mutations - called when the bot joins/leaves a guild
 export const botJoinedGuild = mutation({
   args: { discordId: v.string() },
