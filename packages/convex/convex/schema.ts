@@ -31,5 +31,17 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_discord_id", ["discordId"])
-    .index("by_user_and_discord", ["userId", "discordId"])
+    .index("by_user_and_discord", ["userId", "discordId"]),
+
+  commands: defineTable({
+    guildDiscordId: v.string(),
+    name: v.string(),
+    description: v.optional(v.string()),
+    response: v.string(),
+    enabled: v.boolean(),
+    createdAt: v.float64(),
+    updatedAt: v.float64()
+  })
+    .index("by_guild", ["guildDiscordId"])
+    .index("by_guild_and_name", ["guildDiscordId", "name"])
 });
