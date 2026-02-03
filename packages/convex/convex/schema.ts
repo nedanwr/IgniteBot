@@ -37,7 +37,7 @@ export default defineSchema({
     guildDiscordId: v.string(),
     name: v.string(),
     description: v.optional(v.string()),
-    response: v.string(),
+    responses: v.array(v.string()),
     enabled: v.boolean(),
     createdAt: v.float64(),
     updatedAt: v.float64()
