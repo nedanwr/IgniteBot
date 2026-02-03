@@ -9,6 +9,7 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as commands from "../commands.js";
 import type * as guilds from "../guilds.js";
 import type * as http from "../http.js";
 import type * as users from "../users.js";
@@ -21,6 +22,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  commands: typeof commands;
   guilds: typeof guilds;
   http: typeof http;
   users: typeof users;
