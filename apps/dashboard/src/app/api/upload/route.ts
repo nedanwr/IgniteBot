@@ -2,8 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
+import { env } from "~/env";
+
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+const client = new S3Client({
+  region: "auto",
+  endpoint: env.R2_ENDPOINT,
+  credentials: {
+    accessKeyId: env.R2_ACCESS_KEY_ID,
+    secretAccessKey: env.R2_SECRET_ACCESS_KEY
+  }
+});
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,39 +43,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get R2 credentials
-    const accountId = process.env.R2_ACCOUNT_ID;
-    const accessKeyId = process.env.R2_ACCESS_KEY_ID;
-    const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-    const bucketName = process.env.R2_BUCKET_NAME;
-    const publicUrl = process.env.R2_PUBLIC_URL;
-
-    if (
-      !accountId ||
-      !accessKeyId ||
-      !secretAccessKey ||
-      !bucketName ||
-      !publicUrl
-    ) {
-      return NextResponse.json({ error: "R2 not configured" }, { status: 500 });
-    }
-
     // Generate unique key
     const key = `guilds/${guildId}/commands/${crypto.randomUUID()}-${filename}`;
 
-    // Create S3 client for R2
-    const client = new S3Client({
-      region: "auto",
-      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-      credentials: {
-        accessKeyId,
-        secretAccessKey
-      }
-    });
-
     // Generate presigned URL
     const command = new PutObjectCommand({
-      Bucket: bucketName,
+      Bucket: env.R2_BUCKET_NAME,
       Key: key,
       ContentType: contentType
     });
@@ -75,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       uploadUrl,
-      publicUrl: `${publicUrl}/${key}`
+      publicUrl: `${env.R2_PUBLIC_URL}/${key}`
     });
   } catch (error) {
     console.error("Upload error:", error);
