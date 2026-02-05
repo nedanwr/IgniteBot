@@ -106,7 +106,14 @@ export const resolveCommand = query({
       return null;
     }
 
-    return command;
+    // Randomly select a response from the array
+    const response =
+      command.responses[Math.floor(Math.random() * command.responses.length)];
+
+    return {
+      name: command.name,
+      response
+    };
   }
 });
 
