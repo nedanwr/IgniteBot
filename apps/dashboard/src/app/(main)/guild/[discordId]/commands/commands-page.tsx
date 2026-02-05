@@ -145,8 +145,27 @@ export function CommandsPage({ discordId }: { discordId: string }) {
   }
 
   const handleDelete = async (id: string) => {
+    // Find the command to get its responses before deletion
+    const command = commands?.find((c) => c._id === id);
+    const fileUrls =
+      command?.responses
+        .map((r) => r.content)
+        .filter((content) => content.startsWith("http")) ?? [];
+
     try {
+      // Delete from Convex first for fast UI feedback
       await deleteCommand({ id: id as any });
+
+      // Delete associated files from R2 in the background
+      if (fileUrls.length > 0) {
+        fetch("/api/delete-files", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ urls: fileUrls })
+        }).catch((err) => {
+          console.error("Failed to delete files from R2:", err);
+        });
+      }
     } catch (error) {
       console.error("Failed to delete command:", error);
     }
