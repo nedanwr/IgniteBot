@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -12,8 +11,7 @@ import {
   Trash2,
   ToggleLeft,
   ToggleRight,
-  MessageSquare,
-  X
+  MessageSquare
 } from "lucide-react";
 import { useQuery, useMutation } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -27,18 +25,18 @@ type Command = {
   _id: string;
   name: string;
   description?: string;
-  response: string;
+  responses: { content: string }[];
   enabled: boolean;
 };
 
 function CommandCard({
   command,
-  onEdit,
+  discordId,
   onDelete,
   onToggle
 }: {
   command: Command;
-  onEdit: () => void;
+  discordId: string;
   onDelete: () => void;
   onToggle: () => void;
 }) {
@@ -61,9 +59,18 @@ function CommandCard({
               {command.description}
             </p>
           )}
-          <p className="text-foreground mt-2 line-clamp-2 text-sm">
-            {command.response}
-          </p>
+          <div className="mt-2 space-y-1">
+            {command.responses.slice(0, 2).map((response, i) => (
+              <p key={i} className="text-foreground line-clamp-1 text-sm">
+                {response.content}
+              </p>
+            ))}
+            {command.responses.length > 2 && (
+              <p className="text-muted-foreground text-xs">
+                +{command.responses.length - 2} more
+              </p>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-1">
@@ -83,9 +90,11 @@ function CommandCard({
             variant="ghost"
             size="icon"
             className="text-muted-foreground hover:text-foreground size-8"
-            onClick={onEdit}
+            asChild
           >
-            <Pencil className="size-4" />
+            <Link href={`/guild/${discordId}/commands/${command._id}`}>
+              <Pencil className="size-4" />
+            </Link>
           </Button>
           <Button
             variant="ghost"
@@ -101,144 +110,6 @@ function CommandCard({
   );
 }
 
-type CommandFormData = {
-  name: string;
-  description: string;
-  response: string;
-};
-
-function CommandModal({
-  isOpen,
-  onClose,
-  onSubmit,
-  initialData,
-  isEditing
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (data: CommandFormData) => void;
-  initialData?: CommandFormData;
-  isEditing?: boolean;
-}) {
-  const [name, setName] = useState(initialData?.name ?? "");
-  const [description, setDescription] = useState(
-    initialData?.description ?? ""
-  );
-  const [response, setResponse] = useState(initialData?.response ?? "");
-  const [error, setError] = useState("");
-
-  if (!isOpen) return null;
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-
-    if (!name.trim()) {
-      setError("Command name is required");
-      return;
-    }
-
-    if (!response.trim()) {
-      setError("Response is required");
-      return;
-    }
-
-    if (!/^[a-z0-9]+$/i.test(name)) {
-      setError("Command name can only contain letters and numbers");
-      return;
-    }
-
-    onSubmit({
-      name: name.trim(),
-      description: description.trim(),
-      response: response.trim()
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <div className="border-border/50 bg-card relative w-full max-w-lg rounded-2xl border p-6 shadow-xl">
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-xl font-medium">
-            {isEditing ? "Edit Command" : "Create Command"}
-          </h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground size-8"
-            onClick={onClose}
-          >
-            <X className="size-4" />
-          </Button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="text-foreground mb-1.5 block text-sm font-medium">
-              Command Name
-            </label>
-            <div className="flex items-center">
-              <span className="bg-secondary text-muted-foreground border-border/50 flex h-10 items-center rounded-l-lg border border-r-0 px-3 text-sm">
-                !
-              </span>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value.toLowerCase())}
-                placeholder="hello"
-                className="bg-secondary border-border/50 text-foreground placeholder:text-muted-foreground focus:ring-primary/50 h-10 flex-1 rounded-r-lg border px-3 text-sm outline-none focus:ring-2"
-                disabled={isEditing}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-foreground mb-1.5 block text-sm font-medium">
-              Description{" "}
-              <span className="text-muted-foreground">(optional)</span>
-            </label>
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="A friendly greeting"
-              className="bg-secondary border-border/50 text-foreground placeholder:text-muted-foreground focus:ring-primary/50 h-10 w-full rounded-lg border px-3 text-sm outline-none focus:ring-2"
-            />
-          </div>
-
-          <div>
-            <label className="text-foreground mb-1.5 block text-sm font-medium">
-              Response
-            </label>
-            <textarea
-              value={response}
-              onChange={(e) => setResponse(e.target.value)}
-              placeholder="Hello! Welcome to the server!"
-              rows={4}
-              className="bg-secondary border-border/50 text-foreground placeholder:text-muted-foreground focus:ring-primary/50 w-full resize-none rounded-lg border p-3 text-sm outline-none focus:ring-2"
-            />
-          </div>
-
-          {error && <p className="text-sm text-red-500">{error}</p>}
-
-          <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="ghost" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit">
-              {isEditing ? "Save Changes" : "Create Command"}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
 export function CommandsPage({ discordId }: { discordId: string }) {
   const router = useRouter();
   const user = useQuery(api.users.currentUser);
@@ -246,12 +117,8 @@ export function CommandsPage({ discordId }: { discordId: string }) {
   const commands = useQuery(api.commands.list, { guildDiscordId: discordId });
   const { signOut } = useAuthActions();
 
-  const createCommand = useMutation(api.commands.create);
   const updateCommand = useMutation(api.commands.update);
   const deleteCommand = useMutation(api.commands.remove);
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCommand, setEditingCommand] = useState<Command | null>(null);
 
   const displayName = user?.name ?? user?.username ?? "User";
   const userInitials = displayName[0]?.toUpperCase() ?? "U";
@@ -276,35 +143,6 @@ export function CommandsPage({ discordId }: { discordId: string }) {
     router.push("/");
     return null;
   }
-
-  const handleCreate = async (data: CommandFormData) => {
-    try {
-      await createCommand({
-        guildDiscordId: discordId,
-        name: data.name,
-        description: data.description || undefined,
-        response: data.response
-      });
-      setIsModalOpen(false);
-    } catch (error) {
-      console.error("Failed to create command:", error);
-    }
-  };
-
-  const handleEdit = async (data: CommandFormData) => {
-    if (!editingCommand) return;
-
-    try {
-      await updateCommand({
-        id: editingCommand._id as any,
-        description: data.description || undefined,
-        response: data.response
-      });
-      setEditingCommand(null);
-    } catch (error) {
-      console.error("Failed to update command:", error);
-    }
-  };
 
   const handleDelete = async (id: string) => {
     try {
@@ -396,9 +234,11 @@ export function CommandsPage({ discordId }: { discordId: string }) {
             </div>
           </div>
 
-          <Button onClick={() => setIsModalOpen(true)} className="gap-2">
-            <Plus className="size-4" />
-            New Command
+          <Button asChild className="gap-2">
+            <Link href={`/guild/${discordId}/commands/new`}>
+              <Plus className="size-4" />
+              New Command
+            </Link>
           </Button>
         </div>
 
@@ -412,19 +252,21 @@ export function CommandsPage({ discordId }: { discordId: string }) {
               <p className="text-muted-foreground mb-4">
                 No commands yet. Create your first one!
               </p>
-              <Button onClick={() => setIsModalOpen(true)} className="gap-2">
-                <Plus className="size-4" />
-                Create Command
+              <Button asChild className="gap-2">
+                <Link href={`/guild/${discordId}/commands/new`}>
+                  <Plus className="size-4" />
+                  Create Command
+                </Link>
               </Button>
             </div>
           ) : (
             commands.map((command) => (
               <CommandCard
                 key={command._id}
-                command={command}
-                onEdit={() => setEditingCommand(command)}
+                command={command as Command}
+                discordId={discordId}
                 onDelete={() => handleDelete(command._id)}
-                onToggle={() => handleToggle(command)}
+                onToggle={() => handleToggle(command as Command)}
               />
             ))
           )}
@@ -432,30 +274,6 @@ export function CommandsPage({ discordId }: { discordId: string }) {
       </main>
 
       <div className="via-primary/20 pointer-events-none fixed right-0 bottom-0 left-0 h-px bg-linear-to-r from-transparent to-transparent" />
-
-      {/* Create modal */}
-      <CommandModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleCreate}
-      />
-
-      {/* Edit modal */}
-      <CommandModal
-        isOpen={!!editingCommand}
-        onClose={() => setEditingCommand(null)}
-        onSubmit={handleEdit}
-        initialData={
-          editingCommand
-            ? {
-                name: editingCommand.name,
-                description: editingCommand.description ?? "",
-                response: editingCommand.response
-              }
-            : undefined
-        }
-        isEditing
-      />
     </div>
   );
 }
