@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
@@ -9,7 +9,7 @@ import {
   Loader2,
   Sparkles,
   AlertCircle,
-  Image as ImageIcon
+  X
 } from "lucide-react";
 import { useMutation } from "convex/react";
 import { api } from "@ignite-bot/convex";
@@ -30,6 +30,11 @@ type CommandEditorProps = {
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+type PendingFile = {
+  file: File;
+  previewUrl: string;
+};
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 9);
@@ -59,17 +64,42 @@ export function CommandEditor({
       })) ?? [{ id: generateId(), content: "" }]
   );
   const [activeResponseId, setActiveResponseId] = useState<string | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<Map<string, PendingFile>>(
+    () => new Map()
+  );
 
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
+
+  // Clean up object URLs on unmount
+  useEffect(() => {
+    return () => {
+      pendingFiles.forEach((pending) =>
+        URL.revokeObjectURL(pending.previewUrl)
+      );
+    };
+  }, [pendingFiles]);
 
   const handleAddResponse = () => {
     setResponses([...responses, { id: generateId(), content: "" }]);
   };
 
+  const handleRemovePendingFile = (responseId: string) => {
+    const pending = pendingFiles.get(responseId);
+    if (pending) {
+      URL.revokeObjectURL(pending.previewUrl);
+      setPendingFiles((prev) => {
+        const next = new Map(prev);
+        next.delete(responseId);
+        return next;
+      });
+    }
+  };
+
   const handleRemoveResponse = (id: string) => {
     if (responses.length <= 1) return;
+    // Clean up any pending file for this response
+    handleRemovePendingFile(id);
     setResponses(responses.filter((r) => r.id !== id));
   };
 
@@ -82,7 +112,7 @@ export function CommandEditor({
     fileInputRef.current?.click();
   };
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !activeResponseId) return;
 
@@ -96,45 +126,27 @@ export function CommandEditor({
       return;
     }
 
-    setUploading(true);
     setError("");
 
-    try {
-      // Get presigned URL
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          filename: file.name,
-          contentType: file.type,
-          size: file.size,
-          guildId: discordId
-        })
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Upload failed");
-      }
-
-      const { uploadUrl, publicUrl } = await res.json();
-
-      // Upload to R2
-      await fetch(uploadUrl, {
-        method: "PUT",
-        body: file,
-        headers: { "Content-Type": file.type }
-      });
-
-      // Insert URL into the response
-      handleResponseChange(activeResponseId, publicUrl);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
-    } finally {
-      setUploading(false);
-      setActiveResponseId(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+    // Revoke old preview URL if replacing
+    const existing = pendingFiles.get(activeResponseId);
+    if (existing) {
+      URL.revokeObjectURL(existing.previewUrl);
     }
+
+    // Create preview URL and store the file
+    const previewUrl = URL.createObjectURL(file);
+    setPendingFiles((prev) => {
+      const next = new Map(prev);
+      next.set(activeResponseId, { file, previewUrl });
+      return next;
+    });
+
+    // Clear any text content since file replaces text
+    handleResponseChange(activeResponseId, "");
+
+    setActiveResponseId(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleSave = async () => {
@@ -150,11 +162,12 @@ export function CommandEditor({
       return;
     }
 
-    const validResponses = responses
-      .filter((r) => r.content.trim())
-      .map((r) => ({ content: r.content.trim() }));
+    // Check that we have at least one response (text or pending file)
+    const hasContent = responses.some(
+      (r) => r.content.trim() || pendingFiles.has(r.id)
+    );
 
-    if (validResponses.length === 0) {
+    if (!hasContent) {
       setError("At least one response is required");
       return;
     }
@@ -162,20 +175,64 @@ export function CommandEditor({
     setSaving(true);
 
     try {
+      // Upload all pending files first
+      const uploadedUrls = new Map<string, string>();
+
+      for (const [responseId, pending] of pendingFiles) {
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filename: pending.file.name,
+            contentType: pending.file.type,
+            size: pending.file.size,
+            guildId: discordId
+          })
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || "Upload failed");
+        }
+
+        const { uploadUrl, publicUrl } = await res.json();
+
+        await fetch(uploadUrl, {
+          method: "PUT",
+          body: pending.file,
+          headers: { "Content-Type": pending.file.type }
+        });
+
+        uploadedUrls.set(responseId, publicUrl);
+      }
+
+      // Build final responses, preferring uploaded URLs over text content
+      const finalResponses = responses
+        .filter((r) => r.content.trim() || uploadedUrls.has(r.id))
+        .map((r) => ({
+          content: uploadedUrls.get(r.id) || r.content.trim()
+        }));
+
       if (isEditing && initialData?.id) {
         await updateCommand({
           id: initialData.id as any,
           description: description.trim() || undefined,
-          responses: validResponses
+          responses: finalResponses
         });
       } else {
         await createCommand({
           guildDiscordId: discordId,
           name: name.trim(),
           description: description.trim() || undefined,
-          responses: validResponses
+          responses: finalResponses
         });
       }
+
+      // Clean up object URLs after successful save
+      pendingFiles.forEach((pending) =>
+        URL.revokeObjectURL(pending.previewUrl)
+      );
+      setPendingFiles(new Map());
 
       router.push(`/guild/${discordId}/commands`);
     } catch (err) {
@@ -278,20 +335,17 @@ export function CommandEditor({
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-xs"
-                    className="text-muted-foreground hover:text-foreground"
-                    onClick={() => handleUploadClick(response.id)}
-                    disabled={uploading}
-                  >
-                    {uploading && activeResponseId === response.id ? (
-                      <Loader2 className="size-3.5 animate-spin" />
-                    ) : (
+                  {!pendingFiles.has(response.id) && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      className="text-muted-foreground hover:text-foreground"
+                      onClick={() => handleUploadClick(response.id)}
+                    >
                       <Upload className="size-3.5" />
-                    )}
-                  </Button>
+                    </Button>
+                  )}
                   {responses.length > 1 && (
                     <Button
                       type="button"
@@ -305,15 +359,34 @@ export function CommandEditor({
                   )}
                 </div>
               </div>
-              <textarea
-                value={response.content}
-                onChange={(e) =>
-                  handleResponseChange(response.id, e.target.value)
-                }
-                placeholder="Text message or image URL..."
-                rows={2}
-                className="text-foreground placeholder:text-muted-foreground w-full resize-none border-0 bg-transparent p-4 text-sm outline-none"
-              />
+              {pendingFiles.has(response.id) ? (
+                <div className="relative p-4">
+                  <img
+                    src={pendingFiles.get(response.id)!.previewUrl}
+                    alt="Preview"
+                    className="max-h-40 rounded-lg object-contain"
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon-xs"
+                    className="absolute top-2 right-2"
+                    onClick={() => handleRemovePendingFile(response.id)}
+                  >
+                    <X className="size-3.5" />
+                  </Button>
+                </div>
+              ) : (
+                <textarea
+                  value={response.content}
+                  onChange={(e) =>
+                    handleResponseChange(response.id, e.target.value)
+                  }
+                  placeholder="Text message or image URL..."
+                  rows={2}
+                  className="text-foreground placeholder:text-muted-foreground w-full resize-none border-0 bg-transparent p-4 text-sm outline-none"
+                />
+              )}
             </div>
           ))}
         </div>
@@ -339,7 +412,7 @@ export function CommandEditor({
         </Button>
         <Button
           onClick={handleSave}
-          disabled={saving || uploading}
+          disabled={saving}
           className="min-w-[100px]"
         >
           {saving ? (
