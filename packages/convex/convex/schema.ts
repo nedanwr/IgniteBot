@@ -2,6 +2,11 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import { authTables } from "@convex-dev/auth/server";
 
+// Command response - content can be text or URL
+const responseValidator = v.object({
+  content: v.string()
+});
+
 export default defineSchema({
   ...authTables,
   users: defineTable({
@@ -37,7 +42,7 @@ export default defineSchema({
     guildDiscordId: v.string(),
     name: v.string(),
     description: v.optional(v.string()),
-    responses: v.array(v.string()),
+    responses: v.array(responseValidator),
     enabled: v.boolean(),
     createdAt: v.float64(),
     updatedAt: v.float64()
