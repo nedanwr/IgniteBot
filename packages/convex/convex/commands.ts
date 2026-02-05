@@ -2,6 +2,11 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { auth } from "./auth";
 
+// Response validator matching schema
+const responseValidator = v.object({
+  content: v.string()
+});
+
 // Helper to verify user has access to guild
 async function verifyGuildAccess(
   ctx: { db: any; auth: any },
@@ -58,10 +63,21 @@ export const create = mutation({
     guildDiscordId: v.string(),
     name: v.string(),
     description: v.optional(v.string()),
-    response: v.string()
+    responses: v.array(responseValidator)
   },
-  handler: async (ctx, { guildDiscordId, name, description, response }) => {
+  handler: async (ctx, { guildDiscordId, name, description, responses }) => {
     await verifyGuildAccess(ctx, guildDiscordId);
+
+    if (responses.length === 0) {
+      throw new Error("At least one response is required");
+    }
+
+    // Validate each response has content
+    for (const response of responses) {
+      if (!response.content.trim()) {
+        throw new Error("Each response must have content");
+      }
+    }
 
     // Check if command with same name already exists
     const existing = await ctx.db
@@ -81,7 +97,7 @@ export const create = mutation({
       guildDiscordId,
       name: name.toLowerCase(),
       description,
-      response,
+      responses,
       enabled: true,
       createdAt: now,
       updatedAt: now
@@ -94,10 +110,10 @@ export const update = mutation({
     id: v.id("commands"),
     name: v.optional(v.string()),
     description: v.optional(v.string()),
-    response: v.optional(v.string()),
+    responses: v.optional(v.array(responseValidator)),
     enabled: v.optional(v.boolean())
   },
-  handler: async (ctx, { id, name, description, response, enabled }) => {
+  handler: async (ctx, { id, name, description, responses, enabled }) => {
     const command = await ctx.db.get(id);
     if (!command) {
       throw new Error("Command not found");
@@ -121,13 +137,26 @@ export const update = mutation({
       }
     }
 
+    if (responses !== undefined) {
+      if (responses.length === 0) {
+        throw new Error("At least one response is required");
+      }
+
+      // Validate each response has content
+      for (const response of responses) {
+        if (!response.content.trim()) {
+          throw new Error("Each response must have content");
+        }
+      }
+    }
+
     const updates: Record<string, unknown> = {
       updatedAt: Date.now()
     };
 
     if (name !== undefined) updates.name = name.toLowerCase();
     if (description !== undefined) updates.description = description;
-    if (response !== undefined) updates.response = response;
+    if (responses !== undefined) updates.responses = responses;
     if (enabled !== undefined) updates.enabled = enabled;
 
     await ctx.db.patch(id, updates);
