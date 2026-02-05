@@ -57,9 +57,9 @@ export default class MessageCreateEvent extends Event<
         `Executing command !${command.name} in ${message.guild.name}`
       );
 
-      // Send the response
+      // Send the response (content can be text or URL - Discord handles both)
       yield* Effect.tryPromise({
-        try: () => message.reply(command.response),
+        try: () => message.reply(command.response.content),
         catch: (error) => error
       }).pipe(
         Effect.catchAll((error) =>
