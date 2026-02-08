@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { useQuery, useConvex } from "convex/react";
 import { api } from "@ignite-bot/convex";
+import type { GenericId } from "convex/values";
 import { useEffect } from "react";
 import { useGuild } from "~/stores/guild-store";
 import { useGuildPrefix } from "~/stores/guild-prefix-store";
@@ -21,7 +22,9 @@ export function EditCommandPage({
   const router = useRouter();
   const convex = useConvex();
   const { guild } = useGuild(discordId);
-  const command = useQuery(api.commands.get, { id: commandId as any });
+  const command = useQuery(api.commands.get, {
+    id: commandId as GenericId<"commands">
+  });
   const { prefix, fetchPrefix } = useGuildPrefix(discordId);
 
   useEffect(() => {
@@ -70,7 +73,8 @@ export function EditCommandPage({
           <p className="text-muted-foreground mt-1">
             Modify{" "}
             <code className="bg-secondary rounded px-1.5 py-0.5 text-sm">
-              {prefix}{command.name}
+              {prefix}
+              {command.name}
             </code>{" "}
             for {guild.name}
           </p>

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useMutation, useConvex } from "convex/react";
 import { api } from "@ignite-bot/convex";
+import type { GenericId } from "convex/values";
 import { toast } from "sonner";
 
 import { Button } from "~/components/ui/button";
@@ -23,7 +24,7 @@ import { useGuildPrefix } from "~/stores/guild-prefix-store";
 type CommandEditorProps = {
   discordId: string;
   initialData?: {
-    id: string;
+    id: GenericId<"commands">;
     name: string;
     description: string;
     responses: { content: string }[];
@@ -198,7 +199,7 @@ export function CommandEditor({
 
       if (isEditing && initialData?.id) {
         await updateCommand({
-          id: initialData.id as any,
+          id: initialData.id,
           description: description.trim() || undefined,
           responses: finalResponses
         });

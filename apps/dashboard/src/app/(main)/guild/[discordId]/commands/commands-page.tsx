@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@ignite-bot/convex";
+import type { GenericId } from "convex/values";
 import { useGuild } from "~/stores/guild-store";
 import { useGuildPrefix } from "~/stores/guild-prefix-store";
 
@@ -28,7 +29,7 @@ import {
 } from "~/components/ui/alert-dialog";
 
 type Command = {
-  _id: string;
+  _id: GenericId<"commands">;
   name: string;
   description?: string;
   responses: { content: string }[];
@@ -130,7 +131,7 @@ export function CommandsPage({ discordId }: { discordId: string }) {
       .filter((content) => content.startsWith("http"));
 
     try {
-      await deleteCommand({ id: command._id as any });
+      await deleteCommand({ id: command._id });
 
       if (fileUrls.length > 0) {
         fetch("/api/delete-files", {
@@ -151,7 +152,7 @@ export function CommandsPage({ discordId }: { discordId: string }) {
   const handleToggle = async (command: Command) => {
     try {
       await updateCommand({
-        id: command._id as any,
+        id: command._id,
         enabled: !command.enabled
       });
     } catch (error) {
