@@ -352,6 +352,7 @@ export function CommandEditor({
                       type="button"
                       variant="ghost"
                       size="icon-xs"
+                      aria-label="Upload file"
                       className="text-muted-foreground hover:text-foreground"
                       onClick={() => handleUploadClick(response.id)}
                       disabled={isUploading}
@@ -364,6 +365,7 @@ export function CommandEditor({
                       type="button"
                       variant="ghost"
                       size="icon-xs"
+                      aria-label="Remove response"
                       className="text-muted-foreground hover:text-destructive"
                       onClick={() => handleRemoveResponse(response.id)}
                       disabled={isUploading}
@@ -384,6 +386,7 @@ export function CommandEditor({
                     type="button"
                     variant="secondary"
                     size="icon-xs"
+                    aria-label="Remove file"
                     className="absolute top-2 right-2"
                     onClick={() => handleRemovePendingFile(response.id)}
                     disabled={isUploading}

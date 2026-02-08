@@ -75,6 +75,7 @@ function CommandCard({
           <Button
             variant="ghost"
             size="icon"
+            aria-label={command.enabled ? "Disable command" : "Enable command"}
             className="text-muted-foreground hover:text-foreground size-8"
             onClick={(e) => {
               e.preventDefault();
@@ -90,6 +91,7 @@ function CommandCard({
           <Button
             variant="ghost"
             size="icon"
+            aria-label="Delete command"
             className="text-muted-foreground hover:text-destructive size-8"
             onClick={(e) => {
               e.preventDefault();

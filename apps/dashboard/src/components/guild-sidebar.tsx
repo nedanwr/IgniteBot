@@ -148,6 +148,7 @@ export function GuildSidebar({
         <Button
           variant="ghost"
           size="icon"
+          aria-label="Close sidebar"
           className="text-muted-foreground ml-auto size-8 lg:hidden"
           onClick={onClose}
         >
@@ -230,16 +231,18 @@ export function GuildSidebar({
 
           if (item.comingSoon) {
             return (
-              <div
+              <button
                 key={item.label}
-                className="text-muted-foreground/40 flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm"
+                disabled
+                aria-disabled="true"
+                className="text-muted-foreground/40 flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm"
               >
                 {item.icon}
                 <span>{item.label}</span>
                 <span className="bg-secondary/60 text-muted-foreground/50 ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium">
                   Soon
                 </span>
-              </div>
+              </button>
             );
           }
 

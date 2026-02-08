@@ -32,6 +32,7 @@ export function Header({
             <Button
               variant="ghost"
               size="icon"
+              aria-label="Toggle menu"
               className="text-muted-foreground size-9 lg:hidden"
               onClick={onMenuToggle}
             >
@@ -64,6 +65,7 @@ export function Header({
           <Button
             variant="ghost"
             size="icon"
+            aria-label="Sign out"
             className="text-muted-foreground size-9"
             onClick={() => void signOut()}
           >
