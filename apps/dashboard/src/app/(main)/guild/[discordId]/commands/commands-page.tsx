@@ -16,6 +16,8 @@ import {
 import { useQuery, useMutation, useConvex } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "@ignite-bot/convex";
+import { useCurrentUser } from "~/stores/current-user-store";
+import { useGuild } from "~/stores/guild-store";
 import { useGuildPrefix } from "~/stores/guild-prefix-store";
 
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
@@ -95,21 +97,20 @@ function CommandCard({
 export function CommandsPage({ discordId }: { discordId: string }) {
   const router = useRouter();
   const convex = useConvex();
-  const user = useQuery(api.users.currentUser);
-  const guild = useQuery(api.guilds.getGuild, { discordId });
+  const { user, fetchUser, displayName, userInitials } = useCurrentUser();
+  const { guild, fetchGuild } = useGuild(discordId);
   const commands = useQuery(api.commands.list, { guildDiscordId: discordId });
   const { signOut } = useAuthActions();
   const { prefix, fetchPrefix } = useGuildPrefix(discordId);
 
   useEffect(() => {
+    void fetchUser(convex);
+    void fetchGuild(discordId, convex);
     void fetchPrefix(discordId, convex);
-  }, [discordId, convex, fetchPrefix]);
+  }, [discordId, convex, fetchUser, fetchGuild, fetchPrefix]);
 
   const updateCommand = useMutation(api.commands.update);
   const deleteCommand = useMutation(api.commands.remove);
-
-  const displayName = user?.name ?? user?.username ?? "User";
-  const userInitials = displayName[0]?.toUpperCase() ?? "U";
 
   // Redirect if guild not found or no bot
   if (guild === null) {

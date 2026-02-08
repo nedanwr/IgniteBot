@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { Settings, ChevronRight, Sparkles, LogOut, Crown } from "lucide-react";
-import { useQuery } from "convex/react";
+import { useQuery, useConvex } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "@ignite-bot/convex";
+import { useCurrentUser } from "~/stores/current-user-store";
 
 import { env } from "~/env";
 import { getGuildIconUrl } from "~/lib/discord";
@@ -112,12 +114,14 @@ function GuildCard({ guild, index }: { guild: Guild; index: number }) {
 }
 
 export function Dashboard() {
-  const user = useQuery(api.users.currentUser);
+  const convex = useConvex();
+  const { user, fetchUser, displayName, userInitials } = useCurrentUser();
   const guilds = useQuery(api.guilds.listGuilds);
   const { signOut } = useAuthActions();
 
-  const displayName = user?.name ?? user?.username ?? "User";
-  const initials = displayName[0]?.toUpperCase() ?? "U";
+  useEffect(() => {
+    void fetchUser(convex);
+  }, [convex, fetchUser]);
 
   const guildsWithBot = guilds?.filter((g) => g.hasBot).length ?? 0;
 
@@ -150,7 +154,7 @@ export function Dashboard() {
               {user?.image && (
                 <AvatarImage src={user.image} alt={displayName} />
               )}
-              <AvatarFallback>{initials}</AvatarFallback>
+              <AvatarFallback>{userInitials}</AvatarFallback>
             </Avatar>
             <Button
               variant="ghost"

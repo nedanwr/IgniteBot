@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -15,9 +16,11 @@ import {
   Bell,
   ChevronRight
 } from "lucide-react";
-import { useQuery } from "convex/react";
+import { useConvex } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { api } from "@ignite-bot/convex";
+
+import { useCurrentUser } from "~/stores/current-user-store";
+import { useGuild } from "~/stores/guild-store";
 
 import { getGuildIconUrl } from "~/lib/discord";
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
@@ -97,12 +100,15 @@ function ModuleCard({
 
 export function GuildPage({ discordId }: { discordId: string }) {
   const router = useRouter();
-  const user = useQuery(api.users.currentUser);
-  const guild = useQuery(api.guilds.getGuild, { discordId });
+  const convex = useConvex();
+  const { user, fetchUser, displayName, userInitials } = useCurrentUser();
+  const { guild, fetchGuild } = useGuild(discordId);
   const { signOut } = useAuthActions();
 
-  const displayName = user?.name ?? user?.username ?? "User";
-  const userInitials = displayName[0]?.toUpperCase() ?? "U";
+  useEffect(() => {
+    void fetchUser(convex);
+    void fetchGuild(discordId, convex);
+  }, [convex, fetchUser, fetchGuild, discordId]);
 
   // Redirect if guild not found or no bot
   if (guild === null) {

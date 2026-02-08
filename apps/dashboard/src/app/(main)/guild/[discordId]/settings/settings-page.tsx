@@ -11,9 +11,11 @@ import {
   Save,
   Check
 } from "lucide-react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useConvex } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "@ignite-bot/convex";
+import { useCurrentUser } from "~/stores/current-user-store";
+import { useGuild } from "~/stores/guild-store";
 import { useGuildPrefixStore } from "~/stores/guild-prefix-store";
 
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
@@ -21,8 +23,9 @@ import { Button } from "~/components/ui/button";
 
 export function SettingsPage({ discordId }: { discordId: string }) {
   const router = useRouter();
-  const user = useQuery(api.users.currentUser);
-  const guild = useQuery(api.guilds.getGuild, { discordId });
+  const convex = useConvex();
+  const { user, fetchUser, displayName, userInitials } = useCurrentUser();
+  const { guild, fetchGuild } = useGuild(discordId);
   const settings = useQuery(api.guildSettings.get, {
     guildDiscordId: discordId
   });
@@ -35,8 +38,10 @@ export function SettingsPage({ discordId }: { discordId: string }) {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 
-  const displayName = user?.name ?? user?.username ?? "User";
-  const userInitials = displayName[0]?.toUpperCase() ?? "U";
+  useEffect(() => {
+    void fetchUser(convex);
+    void fetchGuild(discordId, convex);
+  }, [convex, fetchUser, fetchGuild, discordId]);
 
   // Sync prefix from settings
   useEffect(() => {

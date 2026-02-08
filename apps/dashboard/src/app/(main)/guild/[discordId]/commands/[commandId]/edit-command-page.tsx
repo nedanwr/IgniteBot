@@ -1,11 +1,15 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Sparkles, LogOut, Pencil } from "lucide-react";
-import { useQuery } from "convex/react";
+import { useQuery, useConvex } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "@ignite-bot/convex";
+import { useCurrentUser } from "~/stores/current-user-store";
+import { useGuild } from "~/stores/guild-store";
+import { useGuildPrefix } from "~/stores/guild-prefix-store";
 
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
@@ -19,13 +23,18 @@ export function EditCommandPage({
   commandId: string;
 }) {
   const router = useRouter();
-  const user = useQuery(api.users.currentUser);
-  const guild = useQuery(api.guilds.getGuild, { discordId });
+  const convex = useConvex();
+  const { user, fetchUser, displayName, userInitials } = useCurrentUser();
+  const { guild, fetchGuild } = useGuild(discordId);
   const command = useQuery(api.commands.get, { id: commandId as any });
   const { signOut } = useAuthActions();
+  const { prefix, fetchPrefix } = useGuildPrefix(discordId);
 
-  const displayName = user?.name ?? user?.username ?? "User";
-  const userInitials = displayName[0]?.toUpperCase() ?? "U";
+  useEffect(() => {
+    void fetchUser(convex);
+    void fetchGuild(discordId, convex);
+    void fetchPrefix(discordId, convex);
+  }, [convex, fetchUser, fetchGuild, fetchPrefix, discordId]);
 
   // Redirect if guild not found
   if (guild === null) {
@@ -121,7 +130,7 @@ export function EditCommandPage({
             <p className="text-muted-foreground mt-1">
               Modify{" "}
               <code className="bg-secondary rounded px-1.5 py-0.5 text-sm">
-                !{command.name}
+                {prefix}{command.name}
               </code>{" "}
               for {guild.name}
             </p>
