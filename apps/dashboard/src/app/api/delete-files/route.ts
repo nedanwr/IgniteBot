@@ -1,17 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { S3Client, DeleteObjectsCommand } from "@aws-sdk/client-s3";
+import { DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { isAuthenticatedNextjs } from "@convex-dev/auth/nextjs/server";
 
 import { env } from "~/env";
-
-const client = new S3Client({
-  region: "auto",
-  endpoint: env.R2_ENDPOINT,
-  credentials: {
-    accessKeyId: env.R2_ACCESS_KEY_ID,
-    secretAccessKey: env.R2_SECRET_ACCESS_KEY
-  }
-});
+import { s3 } from "~/lib/s3";
 
 // Only allow keys matching the expected guild commands path
 const VALID_KEY_PATTERN =
@@ -72,7 +64,7 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    await client.send(command);
+    await s3.send(command);
 
     return NextResponse.json({ deleted: keys.length });
   } catch (error) {

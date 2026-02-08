@@ -1,17 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { S3Client, AbortMultipartUploadCommand } from "@aws-sdk/client-s3";
+import { AbortMultipartUploadCommand } from "@aws-sdk/client-s3";
 import { isAuthenticatedNextjs } from "@convex-dev/auth/nextjs/server";
 
 import { env } from "~/env";
-
-const client = new S3Client({
-  region: "auto",
-  endpoint: env.R2_ENDPOINT,
-  credentials: {
-    accessKeyId: env.R2_ACCESS_KEY_ID,
-    secretAccessKey: env.R2_SECRET_ACCESS_KEY
-  }
-});
+import { s3 } from "~/lib/s3";
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,7 +27,7 @@ export async function POST(request: NextRequest) {
       UploadId: uploadId
     });
 
-    await client.send(command);
+    await s3.send(command);
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -1,21 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { isAuthenticatedNextjs } from "@convex-dev/auth/nextjs/server";
 
 import { env } from "~/env";
+import { s3 } from "~/lib/s3";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const MAX_FILE_SIZE = 2.5 * 1024 * 1024; // 2.5MB
-
-const client = new S3Client({
-  region: "auto",
-  endpoint: env.R2_ENDPOINT,
-  credentials: {
-    accessKeyId: env.R2_ACCESS_KEY_ID,
-    secretAccessKey: env.R2_SECRET_ACCESS_KEY
-  }
-});
 
 export async function POST(request: NextRequest) {
   try {
@@ -70,7 +62,7 @@ export async function POST(request: NextRequest) {
       ContentType: contentType
     });
 
-    const uploadUrl = await getSignedUrl(client, command, {
+    const uploadUrl = await getSignedUrl(s3, command, {
       expiresIn: 300 // 5 minutes
     });
 
