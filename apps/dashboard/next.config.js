@@ -9,6 +9,14 @@ import { withSentryConfig } from "@sentry/nextjs";
 const config = {
   reactCompiler: true,
   poweredByHeader: false,
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "cdn.discordapp.com"
+      }
+    ]
+  },
   async headers() {
     return [
       {
