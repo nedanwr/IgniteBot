@@ -29,8 +29,13 @@ export function EditCommandPage({
   }, [convex, fetchPrefix, discordId]);
 
   // Redirect if command not found
+  useEffect(() => {
+    if (command === null) {
+      router.push(`/guild/${discordId}/commands`);
+    }
+  }, [command, router, discordId]);
+
   if (command === null) {
-    router.push(`/guild/${discordId}/commands`);
     return null;
   }
 

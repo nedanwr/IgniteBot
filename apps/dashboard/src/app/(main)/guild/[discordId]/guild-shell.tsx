@@ -28,8 +28,13 @@ export function GuildShell({
   }, [convex, fetchUser, fetchGuild, discordId]);
 
   // Redirect if guild not found or no bot
+  useEffect(() => {
+    if (guild === null || (guild && !guild.hasBot)) {
+      router.push("/");
+    }
+  }, [guild, router]);
+
   if (guild === null || (guild && !guild.hasBot)) {
-    router.push("/");
     return null;
   }
 
