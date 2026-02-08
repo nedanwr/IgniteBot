@@ -1,14 +1,13 @@
 import { v } from "convex/values";
+
 import { internalQuery, mutation, query } from "./_generated/server";
+import type { QueryCtx } from "./_generated/server";
 import { auth } from "./auth";
 
 const DEFAULT_PREFIX = "!";
 
 // Helper to verify user has access to guild
-async function verifyGuildAccess(
-  ctx: { db: any; auth: any },
-  guildDiscordId: string
-) {
+async function verifyGuildAccess(ctx: QueryCtx, guildDiscordId: string) {
   const userId = await auth.getUserId(ctx);
   if (!userId) {
     throw new Error("Not authenticated");
@@ -16,7 +15,7 @@ async function verifyGuildAccess(
 
   const guild = await ctx.db
     .query("guilds")
-    .withIndex("by_user_and_discord", (q: any) =>
+    .withIndex("by_user_and_discord", (q) =>
       q.eq("userId", userId).eq("discordId", guildDiscordId)
     )
     .first();
