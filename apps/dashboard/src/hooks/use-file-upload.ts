@@ -7,7 +7,7 @@ const MULTIPART_THRESHOLD = 5 * 1024 * 1024; // 5MB
 const DEFAULT_MAX_CONCURRENT = 3;
 const DEFAULT_MAX_RETRIES = 3;
 const DEFAULT_CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
-const RETRY_DELAYS = [0, 1000, 2000, 4000]; // Exponential backoff
+const RETRY_DELAYS = [1000, 2000, 4000]; // Exponential backoff
 
 // Types
 export type UploadStatus =
@@ -82,7 +82,7 @@ function isRetryableError(error: unknown): boolean {
     if (
       message.includes("network") ||
       message.includes("timeout") ||
-      message.includes("5") ||
+      /\b5\d{2}\b/.test(message) ||
       message.includes("429")
     ) {
       return true;
@@ -116,22 +116,47 @@ export function useFileUpload(
     uploadedBytes: 0
   });
 
+  // Refs for stable access to latest values
+  const filesRef = useRef<Map<string, FileUploadItem>>(new Map());
   const abortControllerRef = useRef<AbortController | null>(null);
   const uploadedBytesRef = useRef<Map<string, number>>(new Map());
+
+  // Store callbacks in refs to avoid re-memoization cascades
+  const onProgressRef = useRef(onProgress);
+  const onFileCompleteRef = useRef(onFileComplete);
+  const onErrorRef = useRef(onError);
+  onProgressRef.current = onProgress;
+  onFileCompleteRef.current = onFileComplete;
+  onErrorRef.current = onError;
+
+  // Wrapper to update both state and ref
+  const updateFiles = useCallback(
+    (
+      updater: (
+        prev: Map<string, FileUploadItem>
+      ) => Map<string, FileUploadItem>
+    ) => {
+      setFiles((prev) => {
+        const next = updater(prev);
+        filesRef.current = next;
+        return next;
+      });
+    },
+    []
+  );
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       abortControllerRef.current?.abort();
-      files.forEach((file) => URL.revokeObjectURL(file.previewUrl));
+      filesRef.current.forEach((file) => URL.revokeObjectURL(file.previewUrl));
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Update a single file's status
   const updateFileStatus = useCallback(
     (id: string, updates: Partial<FileUploadItem>) => {
-      setFiles((prev) => {
+      updateFiles((prev) => {
         const next = new Map(prev);
         const existing = next.get(id);
         if (existing) {
@@ -140,12 +165,12 @@ export function useFileUpload(
         return next;
       });
     },
-    []
+    [updateFiles]
   );
 
   // Recalculate overall progress
   const recalculateProgress = useCallback(() => {
-    const fileArray = Array.from(files.values());
+    const fileArray = Array.from(filesRef.current.values());
     const totalBytes = fileArray.reduce((sum, f) => sum + f.file.size, 0);
     const uploadedBytes = Array.from(uploadedBytesRef.current.values()).reduce(
       (sum, bytes) => sum + bytes,
@@ -165,44 +190,49 @@ export function useFileUpload(
     };
 
     setProgress(newProgress);
-    onProgress?.(newProgress);
-  }, [files, onProgress]);
+    onProgressRef.current?.(newProgress);
+  }, []);
 
   // Add a file
-  const addFile = useCallback((id: string, file: File) => {
-    // Revoke old preview URL if replacing
-    setFiles((prev) => {
-      const existing = prev.get(id);
-      if (existing) {
-        URL.revokeObjectURL(existing.previewUrl);
-      }
+  const addFile = useCallback(
+    (id: string, file: File) => {
+      updateFiles((prev) => {
+        const existing = prev.get(id);
+        if (existing) {
+          URL.revokeObjectURL(existing.previewUrl);
+        }
 
-      const next = new Map(prev);
-      next.set(id, {
-        id,
-        file,
-        previewUrl: URL.createObjectURL(file),
-        status: "pending",
-        progress: 0,
-        retryCount: 0
+        const next = new Map(prev);
+        next.set(id, {
+          id,
+          file,
+          previewUrl: URL.createObjectURL(file),
+          status: "pending",
+          progress: 0,
+          retryCount: 0
+        });
+        return next;
       });
-      return next;
-    });
-  }, []);
+    },
+    [updateFiles]
+  );
 
   // Remove a file
-  const removeFile = useCallback((id: string) => {
-    setFiles((prev) => {
-      const existing = prev.get(id);
-      if (existing) {
-        URL.revokeObjectURL(existing.previewUrl);
-      }
-      const next = new Map(prev);
-      next.delete(id);
-      return next;
-    });
-    uploadedBytesRef.current.delete(id);
-  }, []);
+  const removeFile = useCallback(
+    (id: string) => {
+      updateFiles((prev) => {
+        const existing = prev.get(id);
+        if (existing) {
+          URL.revokeObjectURL(existing.previewUrl);
+        }
+        const next = new Map(prev);
+        next.delete(id);
+        return next;
+      });
+      uploadedBytesRef.current.delete(id);
+    },
+    [updateFiles]
+  );
 
   // Upload a single file using XHR for progress tracking
   const uploadFile = useCallback(
@@ -238,9 +268,15 @@ export function useFileUpload(
         };
         signal.addEventListener("abort", abortHandler);
 
+        const cleanup = () => {
+          signal.removeEventListener("abort", abortHandler);
+        };
+
         xhr.upload.onprogress = (event) => {
           if (event.lengthComputable) {
-            const fileProgress = Math.round((event.loaded / event.total) * 100);
+            const fileProgress = Math.round(
+              (event.loaded / event.total) * 100
+            );
             updateFileStatus(item.id, { progress: fileProgress });
             uploadedBytesRef.current.set(item.id, event.loaded);
             recalculateProgress();
@@ -248,7 +284,7 @@ export function useFileUpload(
         };
 
         xhr.onload = () => {
-          signal.removeEventListener("abort", abortHandler);
+          cleanup();
           if (xhr.status >= 200 && xhr.status < 300) {
             uploadedBytesRef.current.set(item.id, item.file.size);
             recalculateProgress();
@@ -259,12 +295,12 @@ export function useFileUpload(
         };
 
         xhr.onerror = () => {
-          signal.removeEventListener("abort", abortHandler);
+          cleanup();
           reject(new Error("Network error during upload"));
         };
 
         xhr.ontimeout = () => {
-          signal.removeEventListener("abort", abortHandler);
+          cleanup();
           reject(new Error("Upload timeout"));
         };
 
@@ -337,7 +373,8 @@ export function useFileUpload(
             throw new Error(`Failed to upload part ${partNumber}`);
           }
 
-          const etag = uploadRes.headers.get("ETag") || `"part-${partNumber}"`;
+          const etag =
+            uploadRes.headers.get("ETag") || `"part-${partNumber}"`;
           parts.push({ ETag: etag, PartNumber: partNumber });
 
           totalUploaded += chunk.size;
@@ -392,7 +429,7 @@ export function useFileUpload(
 
         if (attempt > 0) {
           const delay =
-            RETRY_DELAYS[attempt] ??
+            RETRY_DELAYS[attempt - 1] ??
             RETRY_DELAYS[RETRY_DELAYS.length - 1] ??
             4000;
           await sleep(delay);
@@ -427,7 +464,7 @@ export function useFileUpload(
 
   // Start uploading all pending files
   const startUpload = useCallback(async (): Promise<Map<string, string>> => {
-    const pendingFiles = Array.from(files.values()).filter(
+    const pendingFiles = Array.from(filesRef.current.values()).filter(
       (f) => f.status === "pending" || f.status === "error"
     );
 
@@ -466,7 +503,7 @@ export function useFileUpload(
             publicUrl: result.value,
             progress: 100
           });
-          onFileComplete?.(item.id, result.value);
+          onFileCompleteRef.current?.(item.id, result.value);
         } else {
           const errorMsg =
             result.reason instanceof Error
@@ -481,7 +518,7 @@ export function useFileUpload(
           } else {
             updateFileStatus(item.id, { status: "error", error: errorMsg });
             errors.push(`${item.file.name}: ${errorMsg}`);
-            onError?.(item.id, errorMsg);
+            onErrorRef.current?.(item.id, errorMsg);
           }
         }
       });
@@ -496,13 +533,10 @@ export function useFileUpload(
 
     return results;
   }, [
-    files,
     maxConcurrent,
     uploadWithRetry,
     updateFileStatus,
-    recalculateProgress,
-    onFileComplete,
-    onError
+    recalculateProgress
   ]);
 
   // Cancel all in-progress uploads
@@ -510,7 +544,7 @@ export function useFileUpload(
     abortControllerRef.current?.abort();
     setIsUploading(false);
 
-    setFiles((prev) => {
+    updateFiles((prev) => {
       const next = new Map(prev);
       next.forEach((file, id) => {
         if (file.status === "uploading") {
@@ -519,12 +553,12 @@ export function useFileUpload(
       });
       return next;
     });
-  }, []);
+  }, [updateFiles]);
 
   // Retry failed uploads
   const retryFailed = useCallback(async (): Promise<Map<string, string>> => {
-    // Reset failed files to pending
-    setFiles((prev) => {
+    // Reset failed files to pending via ref so startUpload sees latest state
+    updateFiles((prev) => {
       const next = new Map(prev);
       next.forEach((file, id) => {
         if (file.status === "error") {
@@ -540,15 +574,16 @@ export function useFileUpload(
       return next;
     });
 
+    // filesRef is now updated synchronously by updateFiles
     return startUpload();
-  }, [startUpload]);
+  }, [updateFiles, startUpload]);
 
   // Reset all state
   const reset = useCallback(() => {
     abortControllerRef.current?.abort();
-    files.forEach((file) => URL.revokeObjectURL(file.previewUrl));
+    filesRef.current.forEach((file) => URL.revokeObjectURL(file.previewUrl));
 
-    setFiles(new Map());
+    updateFiles(() => new Map());
     setIsUploading(false);
     setProgress({
       totalFiles: 0,
@@ -557,7 +592,7 @@ export function useFileUpload(
       uploadedBytes: 0
     });
     uploadedBytesRef.current.clear();
-  }, [files]);
+  }, [updateFiles]);
 
   return {
     files,
