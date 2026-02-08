@@ -13,6 +13,7 @@ const EnvSchema = Schema.Struct({
   CLIENT_TOKEN: Schema.String.pipe(Schema.minLength(1)),
   CLIENT_OWNER_ID: Schema.String.pipe(Schema.minLength(1)),
   CONVEX_URL: Schema.String.pipe(Schema.minLength(1)),
+  BOT_SECRET: Schema.String.pipe(Schema.minLength(1)),
   DEBUG: Schema.optionalWith(Schema.BooleanFromUnknown, {
     default: () => false
   }),
