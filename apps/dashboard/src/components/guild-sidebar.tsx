@@ -152,7 +152,7 @@ export function GuildSidebar({
       </div>
 
       {/* Guild selector */}
-      <div className="border-b border-border/50 px-3 py-3">
+      <div className="border-border/50 border-b px-3 py-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="hover:bg-secondary/50 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 transition-colors">
