@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   MessageSquare,
@@ -12,12 +12,24 @@ import {
   Bell,
   ArrowLeft,
   Sparkles,
+  ChevronsUpDown,
+  Check,
   X
 } from "lucide-react";
+import { useQuery } from "convex/react";
+import { api } from "@ignite-bot/convex";
 
 import { getGuildIconUrl } from "~/lib/discord";
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator
+} from "~/components/ui/dropdown-menu";
 
 type GuildSidebarProps = {
   discordId: string;
@@ -44,6 +56,8 @@ export function GuildSidebar({
   onClose
 }: GuildSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const guilds = useQuery(api.guilds.listGuilds);
 
   const basePath = `/guild/${discordId}`;
 
@@ -112,6 +126,8 @@ export function GuildSidebar({
     ? getGuildIconUrl(discordId, guild.icon)
     : null;
 
+  const guildsWithBot = guilds?.filter((g) => g.hasBot) ?? [];
+
   const sidebarContent = (
     <div className="flex h-full flex-col">
       {/* Branding */}
@@ -135,23 +151,69 @@ export function GuildSidebar({
         </Button>
       </div>
 
-      {/* Guild info */}
-      <div className="border-border/50 mx-3 mt-4 flex items-center gap-3 rounded-lg border px-3 py-2.5">
-        <Avatar className="size-8 rounded-md">
-          {guildIconUrl ? (
-            <AvatarImage src={guildIconUrl} alt={guild.name} />
-          ) : null}
-          <AvatarFallback className="bg-secondary rounded-md text-xs font-medium">
-            {guildInitials}
-          </AvatarFallback>
-        </Avatar>
-        <p className="text-foreground min-w-0 truncate text-sm font-medium">
-          {guild.name}
-        </p>
+      {/* Guild selector */}
+      <div className="border-b border-border/50 px-3 py-3">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="hover:bg-secondary/50 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 transition-colors">
+              <Avatar className="size-8 rounded-md">
+                {guildIconUrl ? (
+                  <AvatarImage src={guildIconUrl} alt={guild.name} />
+                ) : null}
+                <AvatarFallback className="bg-secondary rounded-md text-xs font-medium">
+                  {guildInitials}
+                </AvatarFallback>
+              </Avatar>
+              <p className="text-foreground min-w-0 flex-1 truncate text-left text-sm font-medium">
+                {guild.name}
+              </p>
+              <ChevronsUpDown className="text-muted-foreground size-4 shrink-0" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-[232px]">
+            <DropdownMenuLabel>Switch server</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {guildsWithBot.map((g) => {
+              const iconUrl = g.icon
+                ? getGuildIconUrl(g.discordId, g.icon)
+                : null;
+              const initials = g.name
+                .split(" ")
+                .map((w) => w[0])
+                .join("")
+                .slice(0, 2)
+                .toUpperCase();
+              const isCurrent = g.discordId === discordId;
+
+              return (
+                <DropdownMenuItem
+                  key={g._id}
+                  onClick={() => {
+                    if (!isCurrent) router.push(`/guild/${g.discordId}`);
+                  }}
+                  className="gap-3"
+                >
+                  <Avatar className="size-6 rounded-md">
+                    {iconUrl ? (
+                      <AvatarImage src={iconUrl} alt={g.name} />
+                    ) : null}
+                    <AvatarFallback className="bg-secondary rounded-md text-[10px] font-medium">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="min-w-0 flex-1 truncate">{g.name}</span>
+                  {isCurrent && (
+                    <Check className="text-primary size-4 shrink-0" />
+                  )}
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Section label */}
-      <div className="px-5 pt-6 pb-2">
+      <div className="px-5 pt-5 pb-2">
         <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
           Modules
         </span>
