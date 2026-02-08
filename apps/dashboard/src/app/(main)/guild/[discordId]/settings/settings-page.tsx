@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Settings, Save, Check } from "lucide-react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@ignite-bot/convex";
+
 import { useGuild } from "~/stores/guild-store";
 import { useGuildPrefixStore } from "~/stores/guild-prefix-store";
-
 import { Button } from "~/components/ui/button";
 
 export function SettingsPage({ discordId }: { discordId: string }) {
@@ -21,6 +21,13 @@ export function SettingsPage({ discordId }: { discordId: string }) {
   const [prefix, setPrefix] = useState("");
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  useEffect(() => {
+    return () => {
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+    };
+  }, []);
 
   // Sync prefix from settings
   useEffect(() => {
@@ -55,7 +62,8 @@ export function SettingsPage({ discordId }: { discordId: string }) {
       await updatePrefix({ guildDiscordId: discordId, prefix: prefix.trim() });
       invalidatePrefix(discordId);
       setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+      savedTimerRef.current = setTimeout(() => setSaved(false), 2000);
     } catch (err) {
       setError("Failed to save prefix");
     }
