@@ -122,6 +122,7 @@ export function Dashboard() {
   }, [convex, fetchUser]);
 
   const guildsWithBot = guilds?.filter((g) => g.hasBot).length ?? 0;
+  const isLoading = guilds === undefined;
 
   return (
     <div className="grain min-h-screen">
@@ -142,44 +143,65 @@ export function Dashboard() {
           </p>
         </div>
 
-        <div className="animate-fade-up stagger-1 mb-10 flex flex-wrap gap-6">
-          <div className="flex items-center gap-2 text-sm">
-            <div className="size-2 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50" />
-            <span className="text-muted-foreground">
-              <span className="text-foreground font-medium">
-                {guildsWithBot}
-              </span>{" "}
-              servers with Ignite
-            </span>
+        {isLoading ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                className="border-border/50 bg-card animate-pulse rounded-2xl border p-6"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="bg-secondary size-14 rounded-xl" />
+                  <div className="flex-1 space-y-2 pt-1">
+                    <div className="bg-secondary h-5 w-2/3 rounded" />
+                    <div className="bg-secondary h-4 w-1/3 rounded" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="flex items-center gap-2 text-sm">
-            <div className="bg-primary shadow-primary/50 size-2 rounded-full shadow-lg" />
-            <span className="text-muted-foreground">
-              <span className="text-foreground font-medium">
-                {guilds?.length ?? 0}
-              </span>{" "}
-              total servers
-            </span>
-          </div>
-        </div>
+        ) : (
+          <>
+            <div className="animate-fade-up stagger-1 mb-10 flex flex-wrap gap-6">
+              <div className="flex items-center gap-2 text-sm">
+                <div className="size-2 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50" />
+                <span className="text-muted-foreground">
+                  <span className="text-foreground font-medium">
+                    {guildsWithBot}
+                  </span>{" "}
+                  servers with Ignite
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <div className="bg-primary shadow-primary/50 size-2 rounded-full shadow-lg" />
+                <span className="text-muted-foreground">
+                  <span className="text-foreground font-medium">
+                    {guilds.length}
+                  </span>{" "}
+                  total servers
+                </span>
+              </div>
+            </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {guilds?.map((guild, index) => (
-            <GuildCard key={guild._id} guild={guild} index={index} />
-          ))}
-        </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {guilds.map((guild, index) => (
+                <GuildCard key={guild._id} guild={guild} index={index} />
+              ))}
+            </div>
 
-        <div className="animate-fade-up stagger-8 mt-12 text-center">
-          <p className="text-muted-foreground text-sm">
-            Don&apos;t see your server?{" "}
-            <a
-              href="#"
-              className="text-primary hover:text-primary/80 font-medium transition-colors"
-            >
-              Make sure you have Manage Server permissions
-            </a>
-          </p>
-        </div>
+            <div className="animate-fade-up stagger-8 mt-12 text-center">
+              <p className="text-muted-foreground text-sm">
+                Don&apos;t see your server?{" "}
+                <a
+                  href="#"
+                  className="text-primary hover:text-primary/80 font-medium transition-colors"
+                >
+                  Make sure you have Manage Server permissions
+                </a>
+              </p>
+            </div>
+          </>
+        )}
       </main>
 
       <div className="via-primary/20 pointer-events-none fixed right-0 bottom-0 left-0 h-px bg-linear-to-r from-transparent to-transparent" />
