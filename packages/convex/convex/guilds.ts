@@ -24,6 +24,43 @@ function canManageGuild(permissions: string | number): boolean {
   return (BigInt(permissions) & MANAGE_GUILD) === MANAGE_GUILD;
 }
 
+function isTokenExpired(expiresAt?: number): boolean {
+  if (!expiresAt) return false; // If no expiry info, assume valid
+  // Add 60s buffer so we refresh before actual expiry
+  return Date.now() / 1000 >= expiresAt - 60;
+}
+
+async function refreshDiscordToken(
+  refreshToken: string
+): Promise<{
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+}> {
+  const clientId = process.env.AUTH_DISCORD_ID;
+  const clientSecret = process.env.AUTH_DISCORD_SECRET;
+  if (!clientId || !clientSecret) {
+    throw new Error("Discord OAuth credentials not configured");
+  }
+
+  const response = await fetch("https://discord.com/api/oauth2/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "refresh_token",
+      refresh_token: refreshToken,
+      client_id: clientId,
+      client_secret: clientSecret
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Token refresh failed: ${response.status}`);
+  }
+
+  return response.json();
+}
+
 async function fetchAndSyncGuilds(
   ctx: {
     runQuery: typeof action.prototype;
@@ -36,9 +73,25 @@ async function fetchAndSyncGuilds(
     throw new Error("No access token found");
   }
 
+  let accessToken = user.accessToken;
+
+  // Refresh token if expired
+  if (isTokenExpired(user.expiresAt) && user.refreshToken) {
+    const tokens = await refreshDiscordToken(user.refreshToken);
+    accessToken = tokens.access_token;
+
+    await ctx.runMutation(internal.guilds.updateUserTokens, {
+      userId,
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+      expiresIn: tokens.expires_in,
+      expiresAt: Math.floor(Date.now() / 1000) + tokens.expires_in
+    });
+  }
+
   const response = await fetch("https://discord.com/api/users/@me/guilds", {
     headers: {
-      Authorization: `Bearer ${user.accessToken}`
+      Authorization: `Bearer ${accessToken}`
     }
   });
 
@@ -91,6 +144,19 @@ export const getUser = internalQuery({
   args: { userId: v.id("users") },
   handler: async (ctx, { userId }) => {
     return await ctx.db.get(userId);
+  }
+});
+
+export const updateUserTokens = internalMutation({
+  args: {
+    userId: v.id("users"),
+    accessToken: v.string(),
+    refreshToken: v.string(),
+    expiresIn: v.float64(),
+    expiresAt: v.float64()
+  },
+  handler: async (ctx, { userId, accessToken, refreshToken, expiresIn, expiresAt }) => {
+    await ctx.db.patch(userId, { accessToken, refreshToken, expiresIn, expiresAt });
   }
 });
 
