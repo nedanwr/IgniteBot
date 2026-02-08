@@ -86,7 +86,11 @@ function ModuleCard({
     return <Link href={href}>{content}</Link>;
   }
 
-  return content;
+  return (
+    <div role="group" aria-label={`${title} — coming soon`}>
+      {content}
+    </div>
+  );
 }
 
 export function GuildPage({ discordId }: { discordId: string }) {
