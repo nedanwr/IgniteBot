@@ -2,9 +2,8 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { Settings, ChevronRight, Sparkles, LogOut, Crown } from "lucide-react";
+import { Settings, ChevronRight, Sparkles, Crown } from "lucide-react";
 import { useQuery, useConvex } from "convex/react";
-import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "@ignite-bot/convex";
 import { useCurrentUser } from "~/stores/current-user-store";
 
@@ -12,7 +11,7 @@ import { env } from "~/env";
 import { getGuildIconUrl } from "~/lib/discord";
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
+import { Header } from "~/components/header";
 
 type Guild = {
   _id: string;
@@ -115,9 +114,8 @@ function GuildCard({ guild, index }: { guild: Guild; index: number }) {
 
 export function Dashboard() {
   const convex = useConvex();
-  const { user, fetchUser, displayName, userInitials } = useCurrentUser();
+  const { fetchUser } = useCurrentUser();
   const guilds = useQuery(api.guilds.listGuilds);
-  const { signOut } = useAuthActions();
 
   useEffect(() => {
     void fetchUser(convex);
@@ -132,41 +130,7 @@ export function Dashboard() {
         <div className="bg-primary/3 absolute right-0 -bottom-1/2 size-[600px] rounded-full blur-3xl" />
       </div>
 
-      <header className="border-border/50 bg-background/80 relative border-b backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary/10 text-primary flex size-9 items-center justify-center rounded-lg">
-              <Sparkles className="size-5" />
-            </div>
-            <span className="text-xl font-semibold tracking-tight">
-              <span className="text-gradient">Ignite</span>
-            </span>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="hidden items-center gap-3 sm:flex">
-              <span className="text-muted-foreground text-sm">
-                Welcome back,
-              </span>
-              <span className="font-medium">{displayName}</span>
-            </div>
-            <Avatar className="ring-border/50 hover:ring-primary/30 ring-2 transition-all">
-              {user?.image && (
-                <AvatarImage src={user.image} alt={displayName} />
-              )}
-              <AvatarFallback>{userInitials}</AvatarFallback>
-            </Avatar>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground size-9"
-              onClick={() => void signOut()}
-            >
-              <LogOut className="size-4" />
-            </Button>
-          </div>
-        </div>
-      </header>
+      <Header maxWidth />
 
       <main className="relative mx-auto max-w-6xl px-6 py-12">
         <div className="animate-fade-up mb-12">
