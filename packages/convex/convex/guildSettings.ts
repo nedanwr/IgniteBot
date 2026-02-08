@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalQuery, mutation, query } from "./_generated/server";
 import { auth } from "./auth";
 
 const DEFAULT_PREFIX = "!";
@@ -70,7 +70,7 @@ export const updatePrefix = mutation({
 
 // For the bot - resolves a command from message content
 // Returns the command if found, null otherwise
-export const resolveCommand = query({
+export const resolveCommand = internalQuery({
   args: { guildDiscordId: v.string(), messageContent: v.string() },
   handler: async (ctx, { guildDiscordId, messageContent }) => {
     // Get guild prefix (or default)
@@ -117,8 +117,8 @@ export const resolveCommand = query({
   }
 });
 
-// Get just the prefix for a guild (for the bot, no auth needed)
-export const getPrefix = query({
+// Get just the prefix for a guild (internal only)
+export const getPrefix = internalQuery({
   args: { guildDiscordId: v.string() },
   handler: async (ctx, { guildDiscordId }) => {
     const settings = await ctx.db
