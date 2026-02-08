@@ -167,11 +167,11 @@ export const getByGuildAndName = query({
 export const listEnabled = query({
   args: { guildDiscordId: v.string() },
   handler: async (ctx, { guildDiscordId }) => {
-    const commands = await ctx.db
+    return await ctx.db
       .query("commands")
-      .withIndex("by_guild", (q) => q.eq("guildDiscordId", guildDiscordId))
+      .withIndex("by_guild_and_enabled", (q) =>
+        q.eq("guildDiscordId", guildDiscordId).eq("enabled", true)
+      )
       .collect();
-
-    return commands.filter((c) => c.enabled);
   }
 });
