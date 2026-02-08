@@ -7,7 +7,6 @@ import {
   Sparkles,
   LogOut,
   Plus,
-  Pencil,
   Trash2,
   ToggleLeft,
   ToggleRight,
@@ -41,7 +40,10 @@ function CommandCard({
   onToggle: () => void;
 }) {
   return (
-    <div className="border-border/50 bg-card group relative overflow-hidden rounded-xl border p-4 transition-all duration-300">
+    <Link
+      href={`/guild/${discordId}/commands/${command._id}`}
+      className="border-border/50 bg-card hover:border-primary/50 group relative block overflow-hidden rounded-xl border p-4 transition-all duration-300"
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -54,23 +56,9 @@ function CommandCard({
               </Badge>
             )}
           </div>
-          {command.description && (
-            <p className="text-muted-foreground mt-1 text-sm">
-              {command.description}
-            </p>
-          )}
-          <div className="mt-2 space-y-1">
-            {command.responses.slice(0, 2).map((response, i) => (
-              <p key={i} className="text-foreground line-clamp-1 text-sm">
-                {response.content}
-              </p>
-            ))}
-            {command.responses.length > 2 && (
-              <p className="text-muted-foreground text-xs">
-                +{command.responses.length - 2} more
-              </p>
-            )}
-          </div>
+          <p className="text-muted-foreground mt-2 text-sm italic">
+            {command.description || "No description provided"}
+          </p>
         </div>
 
         <div className="flex items-center gap-1">
@@ -78,7 +66,7 @@ function CommandCard({
             variant="ghost"
             size="icon"
             className="text-muted-foreground hover:text-foreground size-8"
-            onClick={onToggle}
+            onClick={(e) => { e.preventDefault(); onToggle(); }}
           >
             {command.enabled ? (
               <ToggleRight className="text-primary size-4" />
@@ -89,24 +77,14 @@ function CommandCard({
           <Button
             variant="ghost"
             size="icon"
-            className="text-muted-foreground hover:text-foreground size-8"
-            asChild
-          >
-            <Link href={`/guild/${discordId}/commands/${command._id}`}>
-              <Pencil className="size-4" />
-            </Link>
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
             className="text-muted-foreground hover:text-destructive size-8"
-            onClick={onDelete}
+            onClick={(e) => { e.preventDefault(); onDelete(); }}
           >
             <Trash2 className="size-4" />
           </Button>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
