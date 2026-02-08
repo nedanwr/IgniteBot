@@ -4,6 +4,7 @@ import { isAuthenticatedNextjs } from "@convex-dev/auth/nextjs/server";
 
 import { env } from "~/env";
 import { s3 } from "~/lib/s3";
+import { checkBodySize } from "~/lib/api";
 
 // Only allow keys matching the expected guild commands path
 const VALID_KEY_PATTERN =
@@ -35,6 +36,8 @@ export async function POST(request: NextRequest) {
     if (!(await isAuthenticatedNextjs())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const tooLarge = checkBodySize(request);
+    if (tooLarge) return tooLarge;
     const body = await request.json();
     const { urls } = body;
 

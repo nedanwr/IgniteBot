@@ -5,12 +5,15 @@ import { isAuthenticatedNextjs } from "@convex-dev/auth/nextjs/server";
 
 import { env } from "~/env";
 import { s3 } from "~/lib/s3";
+import { checkBodySize } from "~/lib/api";
 
 export async function POST(request: NextRequest) {
   try {
     if (!(await isAuthenticatedNextjs())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const tooLarge = checkBodySize(request);
+    if (tooLarge) return tooLarge;
     const body = await request.json();
     const { uploadId, key, partNumber } = body;
 

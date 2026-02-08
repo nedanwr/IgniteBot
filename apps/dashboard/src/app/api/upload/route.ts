@@ -5,6 +5,7 @@ import { isAuthenticatedNextjs } from "@convex-dev/auth/nextjs/server";
 
 import { env } from "~/env";
 import { s3 } from "~/lib/s3";
+import { checkBodySize } from "~/lib/api";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const MAX_FILE_SIZE = 2.5 * 1024 * 1024; // 2.5MB
@@ -14,6 +15,8 @@ export async function POST(request: NextRequest) {
     if (!(await isAuthenticatedNextjs())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const tooLarge = checkBodySize(request);
+    if (tooLarge) return tooLarge;
     const body = await request.json();
     const { filename, contentType, size, guildId } = body;
 
