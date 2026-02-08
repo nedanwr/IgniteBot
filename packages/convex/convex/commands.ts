@@ -2,11 +2,7 @@ import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
 import { verifyGuildAccess } from "./lib/access";
-
-// Response validator matching schema
-const responseValidator = v.object({
-  content: v.string()
-});
+import { responseValidator } from "./schema";
 
 export const list = query({
   args: { guildDiscordId: v.string() },
