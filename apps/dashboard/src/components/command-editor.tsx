@@ -278,7 +278,7 @@ export function CommandEditor({
 
         <div className="space-y-5 p-5">
           <div>
-            <label className="text-foreground mb-2 block text-sm font-medium">
+            <label htmlFor="command-name" className="text-foreground mb-2 block text-sm font-medium">
               Command Name
             </label>
             <div className="flex items-center">
@@ -286,6 +286,7 @@ export function CommandEditor({
                 {prefix}
               </span>
               <input
+                id="command-name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value.toLowerCase())}
@@ -297,13 +298,14 @@ export function CommandEditor({
           </div>
 
           <div>
-            <label className="text-foreground mb-2 block text-sm font-medium">
+            <label htmlFor="command-description" className="text-foreground mb-2 block text-sm font-medium">
               Description{" "}
               <span className="text-muted-foreground font-normal">
                 (optional)
               </span>
             </label>
             <input
+              id="command-description"
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
