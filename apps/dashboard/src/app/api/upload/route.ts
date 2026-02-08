@@ -59,7 +59,8 @@ export async function POST(request: NextRequest) {
     const command = new PutObjectCommand({
       Bucket: env.R2_BUCKET_NAME,
       Key: key,
-      ContentType: contentType
+      ContentType: contentType,
+      ContentLength: size
     });
 
     const uploadUrl = await getSignedUrl(s3, command, {
