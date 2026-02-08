@@ -14,6 +14,7 @@ import {
 import { useQuery, useMutation } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "@ignite-bot/convex";
+import { useGuildPrefixStore } from "~/stores/guild-prefix-store";
 
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
@@ -28,6 +29,7 @@ export function SettingsPage({ discordId }: { discordId: string }) {
   const { signOut } = useAuthActions();
 
   const updatePrefix = useMutation(api.guildSettings.updatePrefix);
+  const invalidatePrefix = useGuildPrefixStore((s) => s.invalidatePrefix);
 
   const [prefix, setPrefix] = useState("");
   const [saved, setSaved] = useState(false);
@@ -80,6 +82,7 @@ export function SettingsPage({ discordId }: { discordId: string }) {
 
     try {
       await updatePrefix({ guildDiscordId: discordId, prefix: prefix.trim() });
+      invalidatePrefix(discordId);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
