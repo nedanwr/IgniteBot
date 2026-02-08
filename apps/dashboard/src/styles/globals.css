@@ -105,8 +105,11 @@
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+  *,
+  ::after,
+  ::before {
+    --tw-border-color: var(--color-border);
+    --tw-outline-color: var(--color-ring) / 50%;
   }
 
   html {
