@@ -31,6 +31,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!/^\d+$/.test(guildId)) {
+      return NextResponse.json(
+        { error: "Invalid guild ID" },
+        { status: 400 }
+      );
+    }
+
     if (!ALLOWED_TYPES.includes(contentType)) {
       return NextResponse.json(
         { error: "Invalid file type. Allowed: JPG, PNG, WebP, GIF" },
@@ -38,8 +45,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Sanitize filename: strip path separators, limit length
+    const sanitizedFilename = filename
+      .replace(/[/\\]/g, "")
+      .replace(/\.\./g, "")
+      .slice(0, 255);
+
     // Generate unique key
-    const key = `guilds/${guildId}/commands/${crypto.randomUUID()}-${filename}`;
+    const key = `guilds/${guildId}/commands/${crypto.randomUUID()}-${sanitizedFilename}`;
 
     const command = new CreateMultipartUploadCommand({
       Bucket: env.R2_BUCKET_NAME,
