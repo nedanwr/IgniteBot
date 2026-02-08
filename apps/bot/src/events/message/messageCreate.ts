@@ -4,7 +4,7 @@ import { Events, type Message } from "discord.js";
 import { Event } from "~/struct/Event";
 import type { Bot } from "~/struct/Client";
 import { Logger } from "~/services/logger";
-import { convex, api } from "~/services/convex";
+import { callBotEndpoint } from "~/services/convex";
 
 // Check if first character could be a command prefix
 // Matches common prefix characters: ! ? . - > $ % & * / \ ~ , ; : + = @
@@ -35,9 +35,9 @@ export default class MessageCreateEvent extends Event<
       const logger = yield* Logger;
 
       // Resolve command via Convex (checks prefix + looks up command in one query)
-      const command = yield* Effect.tryPromise({
+      const resolved = yield* Effect.tryPromise({
         try: () =>
-          convex.query(api.guildSettings.resolveCommand, {
+          callBotEndpoint("/bot/resolve-command", {
             guildDiscordId: message.guild!.id,
             messageContent: message.content
           }),
@@ -51,6 +51,7 @@ export default class MessageCreateEvent extends Event<
         })
       );
 
+      const command = (resolved as any)?.result;
       if (!command) return;
 
       yield* logger.debug(
