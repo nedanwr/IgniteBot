@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
@@ -11,14 +11,14 @@ import {
   AlertCircle,
   X
 } from "lucide-react";
-import { useMutation } from "convex/react";
+import { useMutation, useConvex } from "convex/react";
 import { api } from "@ignite-bot/convex";
-
 import { toast } from "sonner";
 
 import { Button } from "~/components/ui/button";
 import { UploadProgressIndicator } from "~/components/upload-progress";
 import { useFileUpload } from "~/hooks/use-file-upload";
+import { useGuildPrefix } from "~/stores/guild-prefix-store";
 
 type CommandEditorProps = {
   discordId: string;
@@ -46,10 +46,17 @@ export function CommandEditor({
   onCancel
 }: CommandEditorProps) {
   const router = useRouter();
+  const convex = useConvex();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const createCommand = useMutation(api.commands.create);
   const updateCommand = useMutation(api.commands.update);
+
+  const { prefix, fetchPrefix } = useGuildPrefix(discordId);
+
+  useEffect(() => {
+    void fetchPrefix(discordId, convex);
+  }, [discordId, convex, fetchPrefix]);
 
   const [name, setName] = useState(initialData?.name ?? "");
   const [description, setDescription] = useState(
@@ -275,7 +282,7 @@ export function CommandEditor({
             </label>
             <div className="flex items-center">
               <span className="bg-secondary text-primary border-border/50 flex h-10 items-center rounded-l-lg border border-r-0 px-3 text-sm font-medium">
-                !
+                {prefix}
               </span>
               <input
                 type="text"
