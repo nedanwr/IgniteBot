@@ -13,6 +13,7 @@ import type * as commands from "../commands.js";
 import type * as guildSettings from "../guildSettings.js";
 import type * as guilds from "../guilds.js";
 import type * as http from "../http.js";
+import type * as lib_access from "../lib/access.js";
 import type * as users from "../users.js";
 
 import type {
@@ -27,6 +28,7 @@ declare const fullApi: ApiFromModules<{
   guildSettings: typeof guildSettings;
   guilds: typeof guilds;
   http: typeof http;
+  "lib/access": typeof lib_access;
   users: typeof users;
 }>;
 
