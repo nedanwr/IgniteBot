@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -61,54 +62,57 @@ export function GuildSidebar({
 
   const basePath = `/guild/${discordId}`;
 
-  const navItems: NavItem[] = [
-    {
-      label: "Overview",
-      href: basePath,
-      icon: <LayoutDashboard className="size-4" />,
-      match: "exact"
-    },
-    {
-      label: "Custom Commands",
-      href: `${basePath}/commands`,
-      icon: <MessageSquare className="size-4" />,
-      match: "startsWith"
-    },
-    {
-      label: "Server Settings",
-      href: `${basePath}/settings`,
-      icon: <Settings className="size-4" />,
-      match: "startsWith"
-    },
-    {
-      label: "Auto Moderation",
-      href: `${basePath}/moderation`,
-      icon: <Zap className="size-4" />,
-      match: "startsWith",
-      comingSoon: true
-    },
-    {
-      label: "Verification",
-      href: `${basePath}/verification`,
-      icon: <Shield className="size-4" />,
-      match: "startsWith",
-      comingSoon: true
-    },
-    {
-      label: "Welcome Messages",
-      href: `${basePath}/welcome`,
-      icon: <Users className="size-4" />,
-      match: "startsWith",
-      comingSoon: true
-    },
-    {
-      label: "Notifications",
-      href: `${basePath}/notifications`,
-      icon: <Bell className="size-4" />,
-      match: "startsWith",
-      comingSoon: true
-    }
-  ];
+  const navItems: NavItem[] = useMemo(
+    () => [
+      {
+        label: "Overview",
+        href: basePath,
+        icon: <LayoutDashboard className="size-4" />,
+        match: "exact"
+      },
+      {
+        label: "Custom Commands",
+        href: `${basePath}/commands`,
+        icon: <MessageSquare className="size-4" />,
+        match: "startsWith"
+      },
+      {
+        label: "Server Settings",
+        href: `${basePath}/settings`,
+        icon: <Settings className="size-4" />,
+        match: "startsWith"
+      },
+      {
+        label: "Auto Moderation",
+        href: `${basePath}/moderation`,
+        icon: <Zap className="size-4" />,
+        match: "startsWith",
+        comingSoon: true
+      },
+      {
+        label: "Verification",
+        href: `${basePath}/verification`,
+        icon: <Shield className="size-4" />,
+        match: "startsWith",
+        comingSoon: true
+      },
+      {
+        label: "Welcome Messages",
+        href: `${basePath}/welcome`,
+        icon: <Users className="size-4" />,
+        match: "startsWith",
+        comingSoon: true
+      },
+      {
+        label: "Notifications",
+        href: `${basePath}/notifications`,
+        icon: <Bell className="size-4" />,
+        match: "startsWith",
+        comingSoon: true
+      }
+    ],
+    [basePath]
+  );
 
   function isActive(item: NavItem) {
     if (item.match === "exact") return pathname === item.href;
