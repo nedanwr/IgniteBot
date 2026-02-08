@@ -12,6 +12,7 @@ import {
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@ignite-bot/convex";
 import type { GenericId } from "convex/values";
+import { toast } from "sonner";
 import { useGuild } from "~/stores/guild-store";
 import { useGuildPrefix } from "~/stores/guild-prefix-store";
 
@@ -132,18 +133,22 @@ export function CommandsPage({ discordId }: { discordId: string }) {
 
     try {
       await deleteCommand({ id: command._id });
+      toast.success(`Deleted command "${command.name}"`);
 
       if (fileUrls.length > 0) {
-        fetch("/api/delete-files", {
+        const res = await fetch("/api/delete-files", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ urls: fileUrls })
-        }).catch((err) => {
-          console.error("Failed to delete files from R2:", err);
         });
+        if (!res.ok) {
+          console.error("Failed to delete files from R2:", res.status);
+          toast.error("Command deleted but some files could not be cleaned up");
+        }
       }
     } catch (error) {
       console.error("Failed to delete command:", error);
+      toast.error("Failed to delete command");
     } finally {
       setDeleteTarget(null);
     }
@@ -155,8 +160,12 @@ export function CommandsPage({ discordId }: { discordId: string }) {
         id: command._id,
         enabled: !command.enabled
       });
+      toast.success(
+        command.enabled ? `Disabled "${command.name}"` : `Enabled "${command.name}"`
+      );
     } catch (error) {
       console.error("Failed to toggle command:", error);
+      toast.error("Failed to toggle command");
     }
   };
 
