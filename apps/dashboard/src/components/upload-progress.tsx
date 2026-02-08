@@ -42,7 +42,10 @@ export function UploadProgressIndicator({
       : 0;
 
   return (
-    <div className="border-border/50 bg-card/50 space-y-3 rounded-xl border p-4">
+    <div
+      aria-live="polite"
+      className="border-border/50 bg-card/50 space-y-3 rounded-xl border p-4"
+    >
       {/* Header with status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
