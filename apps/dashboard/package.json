@@ -20,7 +20,6 @@
     "@aws-sdk/s3-request-presigner": "^3.700.0",
     "@convex-dev/auth": "^0.0.90",
     "@ignite-bot/convex": "workspace:*",
-    "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-slot": "^1.2.4",
     "@sentry/nextjs": "^10.38.0",
     "@t3-oss/env-nextjs": "^0.12.0",
