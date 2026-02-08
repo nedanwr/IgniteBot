@@ -90,7 +90,9 @@ export function SettingsPage({ discordId }: { discordId: string }) {
       <div className="animate-fade-up stagger-1 space-y-6">
         {/* Command Prefix */}
         <div className="border-border/50 bg-card rounded-2xl border p-6">
-          <h3 className="text-lg font-medium">Command Prefix</h3>
+          <h3 id="prefix-label" className="text-lg font-medium">
+            Command Prefix
+          </h3>
           <p className="text-muted-foreground mt-1 text-sm">
             The character(s) that trigger custom commands. Default is{" "}
             <code className="bg-secondary rounded px-1.5 py-0.5">!</code>
@@ -103,6 +105,7 @@ export function SettingsPage({ discordId }: { discordId: string }) {
               onChange={(e) => setPrefix(e.target.value)}
               placeholder="!"
               maxLength={5}
+              aria-labelledby="prefix-label"
               className="bg-secondary border-border/50 text-foreground placeholder:text-muted-foreground focus:ring-primary/50 h-10 w-24 rounded-lg border px-3 text-center text-sm font-medium outline-none focus:ring-2"
             />
             <Button
