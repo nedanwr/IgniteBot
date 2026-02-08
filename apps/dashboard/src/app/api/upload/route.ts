@@ -6,7 +6,7 @@ import { isAuthenticatedNextjs } from "@convex-dev/auth/nextjs/server";
 import { env } from "~/env";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 2.5 * 1024 * 1024; // 2.5MB
 
 const client = new S3Client({
   region: "auto",
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 
     if (size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: "File too large. Maximum size is 10MB" },
+        { error: "File too large. Maximum size is 2.5MB for direct uploads" },
         { status: 400 }
       );
     }
