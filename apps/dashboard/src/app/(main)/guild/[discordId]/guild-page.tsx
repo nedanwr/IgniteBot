@@ -92,7 +92,13 @@ function ModuleCard({
 export function GuildPage({ discordId }: { discordId: string }) {
   const { guild } = useGuild(discordId);
 
-  if (!guild) return null;
+  if (!guild) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="text-muted-foreground animate-pulse">Loading...</div>
+      </div>
+    );
+  }
 
   const guildInitials = guild.name
     .split(" ")

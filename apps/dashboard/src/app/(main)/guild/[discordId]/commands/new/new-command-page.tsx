@@ -11,7 +11,13 @@ export function NewCommandPage({ discordId }: { discordId: string }) {
   const router = useRouter();
   const { guild } = useGuild(discordId);
 
-  if (!guild) return null;
+  if (!guild) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="text-muted-foreground animate-pulse">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-12">
