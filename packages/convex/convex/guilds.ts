@@ -4,7 +4,6 @@ import {
   internalAction,
   internalMutation,
   internalQuery,
-  mutation,
   query
 } from "./_generated/server";
 import { internal } from "./_generated/api";
@@ -174,7 +173,7 @@ export const getGuild = query({
 });
 
 // Bot mutations - called when the bot joins/leaves a guild
-export const botJoinedGuild = mutation({
+export const botJoinedGuild = internalMutation({
   args: { discordId: v.string() },
   handler: async (ctx, { discordId }) => {
     const guilds = await ctx.db
@@ -190,7 +189,7 @@ export const botJoinedGuild = mutation({
   }
 });
 
-export const botLeftGuild = mutation({
+export const botLeftGuild = internalMutation({
   args: { discordId: v.string() },
   handler: async (ctx, { discordId }) => {
     const guilds = await ctx.db
@@ -207,7 +206,7 @@ export const botLeftGuild = mutation({
 });
 
 // Sync all guilds the bot is currently in (called on bot startup)
-export const botSyncGuilds = mutation({
+export const botSyncGuilds = internalMutation({
   args: { discordIds: v.array(v.string()) },
   handler: async (ctx, { discordIds }) => {
     const botGuildIds = new Set(discordIds);
