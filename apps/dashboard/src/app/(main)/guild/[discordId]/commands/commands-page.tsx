@@ -13,9 +13,9 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@ignite-bot/convex";
 import type { GenericId } from "convex/values";
 import { toast } from "sonner";
+
 import { useGuild } from "~/stores/guild-store";
 import { useGuildPrefix } from "~/stores/guild-prefix-store";
-
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -81,6 +81,7 @@ function CommandCard({
             className="text-muted-foreground hover:text-foreground size-8"
             onClick={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               onToggle();
             }}
           >
@@ -97,6 +98,7 @@ function CommandCard({
             className="text-muted-foreground hover:text-destructive size-8"
             onClick={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               onDelete();
             }}
           >
@@ -161,7 +163,9 @@ export function CommandsPage({ discordId }: { discordId: string }) {
         enabled: !command.enabled
       });
       toast.success(
-        command.enabled ? `Disabled "${command.name}"` : `Enabled "${command.name}"`
+        command.enabled
+          ? `Disabled "${command.name}"`
+          : `Enabled "${command.name}"`
       );
     } catch (error) {
       console.error("Failed to toggle command:", error);
