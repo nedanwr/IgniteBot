@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -12,9 +13,10 @@ import {
   ToggleRight,
   MessageSquare
 } from "lucide-react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useConvex } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "@ignite-bot/convex";
+import { useGuildPrefix } from "~/stores/guild-prefix-store";
 
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
@@ -31,11 +33,13 @@ type Command = {
 function CommandCard({
   command,
   discordId,
+  prefix,
   onDelete,
   onToggle
 }: {
   command: Command;
   discordId: string;
+  prefix: string;
   onDelete: () => void;
   onToggle: () => void;
 }) {
@@ -48,7 +52,7 @@ function CommandCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <code className="bg-secondary text-primary rounded px-2 py-0.5 text-sm font-medium">
-              !{command.name}
+              {prefix}{command.name}
             </code>
             {!command.enabled && (
               <Badge variant="secondary" className="text-xs">
@@ -90,10 +94,16 @@ function CommandCard({
 
 export function CommandsPage({ discordId }: { discordId: string }) {
   const router = useRouter();
+  const convex = useConvex();
   const user = useQuery(api.users.currentUser);
   const guild = useQuery(api.guilds.getGuild, { discordId });
   const commands = useQuery(api.commands.list, { guildDiscordId: discordId });
   const { signOut } = useAuthActions();
+  const { prefix, fetchPrefix } = useGuildPrefix(discordId);
+
+  useEffect(() => {
+    void fetchPrefix(discordId, convex);
+  }, [discordId, convex, fetchPrefix]);
 
   const updateCommand = useMutation(api.commands.update);
   const deleteCommand = useMutation(api.commands.remove);
@@ -262,6 +272,7 @@ export function CommandsPage({ discordId }: { discordId: string }) {
                 key={command._id}
                 command={command as Command}
                 discordId={discordId}
+                prefix={prefix}
                 onDelete={() => handleDelete(command._id)}
                 onToggle={() => handleToggle(command as Command)}
               />
