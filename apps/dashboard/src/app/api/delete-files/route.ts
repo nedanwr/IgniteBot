@@ -13,18 +13,26 @@ const client = new S3Client({
   }
 });
 
+// Only allow keys matching the expected guild commands path
+const VALID_KEY_PATTERN =
+  /^guilds\/\d+\/commands\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-.+$/;
+
 /**
  * Extracts the S3 key from a public URL.
  * Expected URL format: https://public-domain.com/guilds/{guildId}/commands/{uuid}-{filename}
+ * Returns null if the key doesn't match the expected pattern.
  */
 function extractKeyFromUrl(url: string): string | null {
   try {
     const publicUrlBase = env.R2_PUBLIC_URL;
-    if (url.startsWith(publicUrlBase)) {
-      // Remove the base URL and leading slash
-      return url.slice(publicUrlBase.length).replace(/^\//, "");
+    if (!url.startsWith(publicUrlBase)) {
+      return null;
     }
-    return null;
+    const key = url.slice(publicUrlBase.length).replace(/^\//, "");
+    if (!VALID_KEY_PATTERN.test(key)) {
+      return null;
+    }
+    return key;
   } catch {
     return null;
   }
