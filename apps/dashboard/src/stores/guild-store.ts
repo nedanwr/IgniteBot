@@ -62,18 +62,16 @@ export const useGuildStore = create<GuildState>((set, get) => ({
 }));
 
 export function useGuild(discordId: string) {
+  const fetched = useGuildStore((s) => discordId in s.guilds);
   const guild = useGuildStore((s) => s.guilds[discordId]);
   const loading = useGuildStore((s) => s.loading[discordId] ?? false);
   const error = useGuildStore((s) => s.errors[discordId] ?? null);
   const fetchGuild = useGuildStore((s) => s.fetchGuild);
   const invalidateGuild = useGuildStore((s) => s.invalidateGuild);
 
-  // undefined if not yet in store (not fetched), null if fetched but not found
-  const resolved =
-    discordId in useGuildStore.getState().guilds ? guild : undefined;
-
   return {
-    guild: resolved as Guild | null | undefined,
+    // undefined if not yet in store (not fetched), null if fetched but not found
+    guild: fetched ? (guild as Guild | null) : undefined,
     loading,
     error,
     fetchGuild,
