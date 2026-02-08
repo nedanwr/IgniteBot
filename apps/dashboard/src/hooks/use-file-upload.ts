@@ -322,6 +322,7 @@ export function useFileUpload(
         body: JSON.stringify({
           filename: item.file.name,
           contentType: item.file.type,
+          size: item.file.size,
           guildId
         }),
         signal
