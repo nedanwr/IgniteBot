@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   Plus,
@@ -15,6 +16,16 @@ import { useGuildPrefix } from "~/stores/guild-prefix-store";
 
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from "~/components/ui/alert-dialog";
 
 type Command = {
   _id: string;
@@ -46,7 +57,8 @@ function CommandCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <code className="bg-secondary text-primary rounded px-2 py-0.5 text-sm font-medium">
-              {prefix}{command.name}
+              {prefix}
+              {command.name}
             </code>
             {!command.enabled && (
               <Badge variant="secondary" className="text-xs">
@@ -64,7 +76,10 @@ function CommandCard({
             variant="ghost"
             size="icon"
             className="text-muted-foreground hover:text-foreground size-8"
-            onClick={(e) => { e.preventDefault(); onToggle(); }}
+            onClick={(e) => {
+              e.preventDefault();
+              onToggle();
+            }}
           >
             {command.enabled ? (
               <ToggleRight className="text-primary size-4" />
@@ -76,7 +91,10 @@ function CommandCard({
             variant="ghost"
             size="icon"
             className="text-muted-foreground hover:text-destructive size-8"
-            onClick={(e) => { e.preventDefault(); onDelete(); }}
+            onClick={(e) => {
+              e.preventDefault();
+              onDelete();
+            }}
           >
             <Trash2 className="size-4" />
           </Button>
@@ -94,6 +112,8 @@ export function CommandsPage({ discordId }: { discordId: string }) {
   const updateCommand = useMutation(api.commands.update);
   const deleteCommand = useMutation(api.commands.remove);
 
+  const [deleteTarget, setDeleteTarget] = useState<Command | null>(null);
+
   if (!guild || commands === undefined) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -102,15 +122,13 @@ export function CommandsPage({ discordId }: { discordId: string }) {
     );
   }
 
-  const handleDelete = async (id: string) => {
-    const command = commands?.find((c) => c._id === id);
-    const fileUrls =
-      command?.responses
-        .map((r) => r.content)
-        .filter((content) => content.startsWith("http")) ?? [];
+  const handleDelete = async (command: Command) => {
+    const fileUrls = command.responses
+      .map((r) => r.content)
+      .filter((content) => content.startsWith("http"));
 
     try {
-      await deleteCommand({ id: id as any });
+      await deleteCommand({ id: command._id as any });
 
       if (fileUrls.length > 0) {
         fetch("/api/delete-files", {
@@ -123,6 +141,8 @@ export function CommandsPage({ discordId }: { discordId: string }) {
       }
     } catch (error) {
       console.error("Failed to delete command:", error);
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -187,12 +207,44 @@ export function CommandsPage({ discordId }: { discordId: string }) {
               command={command as Command}
               discordId={discordId}
               prefix={prefix}
-              onDelete={() => handleDelete(command._id)}
+              onDelete={() => setDeleteTarget(command as Command)}
               onToggle={() => handleToggle(command as Command)}
             />
           ))
         )}
       </div>
+
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete command</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete{" "}
+              <code className="bg-secondary rounded px-1.5 py-0.5 text-sm">
+                {prefix}
+                {deleteTarget?.name}
+              </code>
+              ? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                if (deleteTarget) handleDelete(deleteTarget);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
