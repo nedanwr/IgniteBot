@@ -4,7 +4,7 @@ import { Events, type Guild } from "discord.js";
 import { Event } from "~/struct/Event";
 import type { Bot } from "~/struct/Client";
 import { Logger } from "~/services/logger";
-import { convex, api } from "~/services/convex";
+import { callBotEndpoint } from "~/services/convex";
 
 export default class GuildDeleteEvent extends Event<
   Events.GuildDelete,
@@ -25,11 +25,11 @@ export default class GuildDeleteEvent extends Event<
 
       yield* Effect.tryPromise({
         try: () =>
-          convex.mutation(api.guilds.botLeftGuild, { discordId: guild.id }),
+          callBotEndpoint("/bot/guild-left", { discordId: guild.id }),
         catch: (error) => error
       }).pipe(
-        Effect.tap((updated) =>
-          logger.debug(`Updated ${updated} guild record(s) for ${guild.id}`)
+        Effect.tap((result) =>
+          logger.debug(`Updated ${(result as any).updated} guild record(s) for ${guild.id}`)
         ),
         Effect.catchAll((error) =>
           logger.error(`Failed to sync guild leave to Convex:`, error)

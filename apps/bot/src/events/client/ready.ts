@@ -6,7 +6,7 @@ import type { Bot } from "~/struct/Client";
 import { Logger } from "~/services/logger";
 import { PluginManager } from "~/managers/PluginManager";
 import { AppConfig } from "~/services/config";
-import { convex, api } from "~/services/convex";
+import { callBotEndpoint } from "~/services/convex";
 
 export default class ReadyEvent extends Event<
   Events.ClientReady,
@@ -45,12 +45,12 @@ export default class ReadyEvent extends Event<
       const guildIds = Array.from(client.guilds.cache.keys());
       yield* Effect.tryPromise({
         try: () =>
-          convex.mutation(api.guilds.botSyncGuilds, { discordIds: guildIds }),
+          callBotEndpoint("/bot/sync-guilds", { discordIds: guildIds }),
         catch: (error) => error
       }).pipe(
-        Effect.tap((updated) =>
+        Effect.tap((result) =>
           logger.info(
-            `Synced ${guildIds.length} guilds, updated ${updated} records`
+            `Synced ${guildIds.length} guilds, updated ${(result as any).updated} records`
           )
         ),
         Effect.catchAll((error) =>
