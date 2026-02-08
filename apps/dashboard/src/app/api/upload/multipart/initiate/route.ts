@@ -5,6 +5,7 @@ import { isAuthenticatedNextjs } from "@convex-dev/auth/nextjs/server";
 import { env } from "~/env";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 const client = new S3Client({
   region: "auto",
@@ -21,10 +22,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const body = await request.json();
-    const { filename, contentType, guildId } = body;
+    const { filename, contentType, size, guildId } = body;
 
     // Validate
-    if (!filename || !contentType || !guildId) {
+    if (!filename || !contentType || !size || !guildId) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -34,6 +35,13 @@ export async function POST(request: NextRequest) {
     if (!/^\d+$/.test(guildId)) {
       return NextResponse.json(
         { error: "Invalid guild ID" },
+        { status: 400 }
+      );
+    }
+
+    if (size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: "File too large. Maximum size is 10MB" },
         { status: 400 }
       );
     }
