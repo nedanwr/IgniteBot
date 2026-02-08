@@ -77,7 +77,14 @@ export function UploadProgressIndicator({
       </div>
 
       {/* Progress bar */}
-      <div className="bg-secondary h-1.5 overflow-hidden rounded-full">
+      <div
+        role="progressbar"
+        aria-valuenow={progressPercent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="Upload progress"
+        className="bg-secondary h-1.5 overflow-hidden rounded-full"
+      >
         <div
           className={cn(
             "h-full transition-all duration-300",
