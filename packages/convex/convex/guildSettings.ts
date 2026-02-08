@@ -24,8 +24,9 @@ export const updatePrefix = mutation({
   handler: async (ctx, { guildDiscordId, prefix }) => {
     await verifyGuildAccess(ctx, guildDiscordId);
 
-    if (!prefix || prefix.length > 5) {
-      throw new Error("Prefix must be 1-5 characters");
+    const trimmed = prefix.trim();
+    if (!trimmed || trimmed.length > 5) {
+      throw new Error("Prefix must be 1-5 non-whitespace characters");
     }
 
     const existing = await ctx.db
@@ -34,9 +35,9 @@ export const updatePrefix = mutation({
       .first();
 
     if (existing) {
-      await ctx.db.patch(existing._id, { prefix });
+      await ctx.db.patch(existing._id, { prefix: trimmed });
     } else {
-      await ctx.db.insert("guildSettings", { guildDiscordId, prefix });
+      await ctx.db.insert("guildSettings", { guildDiscordId, prefix: trimmed });
     }
   }
 });
