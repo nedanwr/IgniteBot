@@ -3,6 +3,7 @@ import { DM_Sans, Instrument_Sans } from "next/font/google";
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 
 import { AppConvexProvider } from "~/integrations/convex/provider";
+import { Toaster } from "~/components/ui/sonner";
 import "~/styles/globals.css";
 
 export const metadata: Metadata = {
@@ -34,6 +35,7 @@ export default function RootLayout({
       >
         <body>
           <AppConvexProvider>{children}</AppConvexProvider>
+          <Toaster position="bottom-right" richColors closeButton />
         </body>
       </html>
     </ConvexAuthNextjsServerProvider>
