@@ -1,10 +1,16 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { DM_Sans, Instrument_Sans } from "next/font/google";
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 
 import { AppConvexProvider } from "~/integrations/convex/provider";
 import { Toaster } from "~/components/ui/sonner";
 import "~/styles/globals.css";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#000000"
+};
 
 export const metadata: Metadata = {
   title: {
