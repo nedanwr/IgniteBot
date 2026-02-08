@@ -57,4 +57,20 @@ http.route({
   }),
 });
 
+http.route({
+  path: "/bot/resolve-command",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    if (!verifyBotSecret(request)) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+    const { guildDiscordId, messageContent } = await request.json();
+    const result = await ctx.runQuery(
+      internal.guildSettings.resolveCommand,
+      { guildDiscordId, messageContent }
+    );
+    return Response.json({ result });
+  }),
+});
+
 export default http;
