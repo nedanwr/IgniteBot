@@ -192,12 +192,9 @@ export function Dashboard() {
             <div className="animate-fade-up stagger-8 mt-12 text-center">
               <p className="text-muted-foreground text-sm">
                 Don&apos;t see your server?{" "}
-                <a
-                  href="#"
-                  className="text-primary hover:text-primary/80 font-medium transition-colors"
-                >
+                <span className="text-primary font-medium">
                   Make sure you have Manage Server permissions
-                </a>
+                </span>
               </p>
             </div>
           </>
