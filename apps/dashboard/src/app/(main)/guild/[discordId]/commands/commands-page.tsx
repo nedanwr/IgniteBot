@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@ignite-bot/convex";
-import type { GenericId } from "convex/values";
+import type { Doc } from "@ignite-bot/convex/dataModel";
 import { toast } from "sonner";
 
 import { useGuild } from "~/stores/guild-store";
@@ -29,13 +29,7 @@ import {
   AlertDialogTitle
 } from "~/components/ui/alert-dialog";
 
-type Command = {
-  _id: GenericId<"commands">;
-  name: string;
-  description?: string;
-  responses: { content: string }[];
-  enabled: boolean;
-};
+type Command = Doc<"commands">;
 
 function CommandCard({
   command,
