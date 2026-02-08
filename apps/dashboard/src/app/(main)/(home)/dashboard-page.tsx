@@ -8,7 +8,7 @@ import { api } from "@ignite-bot/convex";
 import { useCurrentUser } from "~/stores/current-user-store";
 
 import { env } from "~/env";
-import { getGuildIconUrl } from "~/lib/discord";
+import { getGuildIconUrl, getGuildInitials } from "~/lib/discord";
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Header } from "~/components/header";
@@ -37,12 +37,7 @@ function getBotInviteUrl(guildId: string): string {
 }
 
 function GuildCard({ guild, index }: { guild: Guild; index: number }) {
-  const initials = guild.name
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const initials = getGuildInitials(guild.name);
 
   const staggerClass = `stagger-${Math.min(index + 1, 8)}`;
   const iconUrl = guild.icon

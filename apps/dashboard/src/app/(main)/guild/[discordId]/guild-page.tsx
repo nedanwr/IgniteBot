@@ -14,7 +14,7 @@ import {
 
 import { useGuild } from "~/stores/guild-store";
 
-import { getGuildIconUrl } from "~/lib/discord";
+import { getGuildIconUrl, getGuildInitials } from "~/lib/discord";
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
 
 type ModuleCardProps = {
@@ -104,12 +104,7 @@ export function GuildPage({ discordId }: { discordId: string }) {
     );
   }
 
-  const guildInitials = guild.name
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const guildInitials = getGuildInitials(guild.name);
 
   const guildIconUrl = guild.icon
     ? getGuildIconUrl(guild.discordId, guild.icon)
