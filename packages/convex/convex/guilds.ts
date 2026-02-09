@@ -1,10 +1,11 @@
-import { v } from "convex/values";
+import { v, type GenericId } from "convex/values";
 import {
   action,
   internalAction,
   internalMutation,
   internalQuery,
-  query
+  query,
+  type ActionCtx
 } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { auth } from "./auth";
@@ -30,9 +31,7 @@ function isTokenExpired(expiresAt?: number): boolean {
   return Date.now() / 1000 >= expiresAt - 60;
 }
 
-async function refreshDiscordToken(
-  refreshToken: string
-): Promise<{
+async function refreshDiscordToken(refreshToken: string): Promise<{
   access_token: string;
   refresh_token: string;
   expires_in: number;
@@ -61,13 +60,7 @@ async function refreshDiscordToken(
   return response.json();
 }
 
-async function fetchAndSyncGuilds(
-  ctx: {
-    runQuery: typeof action.prototype;
-    runMutation: typeof action.prototype;
-  },
-  userId: string
-) {
+async function fetchAndSyncGuilds(ctx: ActionCtx, userId: GenericId<"users">) {
   const user = await ctx.runQuery(internal.guilds.getUser, { userId });
   if (!user?.accessToken) {
     throw new Error("No access token found");
@@ -124,7 +117,7 @@ async function fetchAndSyncGuilds(
 export const fetchGuildsInternal = internalAction({
   args: { userId: v.id("users") },
   handler: async (ctx, { userId }) => {
-    return await fetchAndSyncGuilds(ctx as any, userId);
+    return await fetchAndSyncGuilds(ctx, userId);
   }
 });
 
@@ -136,7 +129,7 @@ export const fetchGuilds = action({
     if (!userId) {
       throw new Error("Not authenticated");
     }
-    return await fetchAndSyncGuilds(ctx as any, userId);
+    return await fetchAndSyncGuilds(ctx, userId);
   }
 });
 
@@ -155,8 +148,16 @@ export const updateUserTokens = internalMutation({
     expiresIn: v.float64(),
     expiresAt: v.float64()
   },
-  handler: async (ctx, { userId, accessToken, refreshToken, expiresIn, expiresAt }) => {
-    await ctx.db.patch(userId, { accessToken, refreshToken, expiresIn, expiresAt });
+  handler: async (
+    ctx,
+    { userId, accessToken, refreshToken, expiresIn, expiresAt }
+  ) => {
+    await ctx.db.patch(userId, {
+      accessToken,
+      refreshToken,
+      expiresIn,
+      expiresAt
+    });
   }
 });
 
