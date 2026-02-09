@@ -35,6 +35,24 @@ export default class GuildDeleteEvent extends Event<
           logger.error(`Failed to sync guild leave to Convex:`, error)
         )
       );
+
+      yield* Effect.tryPromise({
+        try: () =>
+          callBotEndpoint("/bot/audit-log", {
+            guildDiscordId: guild.id,
+            action: "guild.bot_left",
+            source: "bot",
+            actorId: "system",
+            targetType: "guild",
+            targetId: guild.id,
+            targetName: guild.name
+          }),
+        catch: (error) => error
+      }).pipe(
+        Effect.catchAll((error) =>
+          logger.error(`Failed to log guild leave:`, error)
+        )
+      );
     });
   }
 }
