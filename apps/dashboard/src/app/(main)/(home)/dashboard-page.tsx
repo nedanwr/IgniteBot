@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
 import { Settings, ChevronRight, Sparkles, Crown } from "lucide-react";
-import { useQuery, useConvex } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "@ignite-bot/convex";
-import { useCurrentUser } from "~/stores/current-user-store";
 
 import { env } from "~/env";
 import { getGuildIconUrl, getGuildInitials } from "~/lib/discord";
@@ -108,13 +106,7 @@ function GuildCard({ guild, index }: { guild: Guild; index: number }) {
 }
 
 export function Dashboard() {
-  const convex = useConvex();
-  const { fetchUser } = useCurrentUser();
   const guilds = useQuery(api.guilds.listGuilds);
-
-  useEffect(() => {
-    void fetchUser(convex);
-  }, [convex, fetchUser]);
 
   const guildsWithBot = guilds?.filter((g) => g.hasBot).length ?? 0;
   const isLoading = guilds === undefined;

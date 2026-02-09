@@ -12,8 +12,7 @@ import {
   ChevronRight
 } from "lucide-react";
 
-import { useGuild } from "~/stores/guild-store";
-
+import { useGuild } from "~/hooks/use-guild";
 import { getGuildIconUrl, getGuildInitials } from "~/lib/discord";
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
 

@@ -14,8 +14,8 @@ import { api } from "@ignite-bot/convex";
 import type { Doc } from "@ignite-bot/convex/dataModel";
 import { toast } from "sonner";
 
-import { useGuild } from "~/stores/guild-store";
-import { useGuildPrefix } from "~/stores/guild-prefix-store";
+import { useGuild } from "~/hooks/use-guild";
+import { useGuildPrefix } from "~/hooks/use-guild-prefix";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import {

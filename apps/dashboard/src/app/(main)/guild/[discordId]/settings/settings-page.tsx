@@ -5,8 +5,7 @@ import { Settings, Save, Check } from "lucide-react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@ignite-bot/convex";
 
-import { useGuild } from "~/stores/guild-store";
-import { useGuildPrefixStore } from "~/stores/guild-prefix-store";
+import { useGuild } from "~/hooks/use-guild";
 import { Button } from "~/components/ui/button";
 
 export function SettingsPage({ discordId }: { discordId: string }) {
@@ -16,7 +15,6 @@ export function SettingsPage({ discordId }: { discordId: string }) {
   });
 
   const updatePrefix = useMutation(api.guildSettings.updatePrefix);
-  const invalidatePrefix = useGuildPrefixStore((s) => s.invalidatePrefix);
 
   const [prefix, setPrefix] = useState("");
   const [saved, setSaved] = useState(false);
@@ -60,7 +58,6 @@ export function SettingsPage({ discordId }: { discordId: string }) {
 
     try {
       await updatePrefix({ guildDiscordId: discordId, prefix: prefix.trim() });
-      invalidatePrefix(discordId);
       setSaved(true);
       if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
       savedTimerRef.current = setTimeout(() => setSaved(false), 2000);

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus } from "lucide-react";
 
-import { useGuild } from "~/stores/guild-store";
+import { useGuild } from "~/hooks/use-guild";
 import { CommandEditor } from "~/components/command-editor";
 
 export function NewCommandPage({ discordId }: { discordId: string }) {

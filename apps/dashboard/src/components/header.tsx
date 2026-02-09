@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Sparkles, LogOut, Menu } from "lucide-react";
 import { useAuthActions } from "@convex-dev/auth/react";
 
-import { useCurrentUser } from "~/stores/current-user-store";
+import { useCurrentUser } from "~/hooks/use-current-user";
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 

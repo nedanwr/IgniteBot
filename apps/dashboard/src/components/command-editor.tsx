@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
@@ -11,7 +11,7 @@ import {
   AlertCircle,
   X
 } from "lucide-react";
-import { useMutation, useConvex } from "convex/react";
+import { useMutation } from "convex/react";
 import { api } from "@ignite-bot/convex";
 import type { GenericId } from "convex/values";
 import { toast } from "sonner";
@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import { UploadProgressIndicator } from "~/components/upload-progress";
 import { useFileUpload } from "~/hooks/use-file-upload";
-import { useGuildPrefix } from "~/stores/guild-prefix-store";
+import { useGuildPrefix } from "~/hooks/use-guild-prefix";
 
 type CommandEditorProps = {
   discordId: string;
@@ -47,17 +47,12 @@ export function CommandEditor({
   onCancel
 }: CommandEditorProps) {
   const router = useRouter();
-  const convex = useConvex();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const createCommand = useMutation(api.commands.create);
   const updateCommand = useMutation(api.commands.update);
 
-  const { prefix, fetchPrefix } = useGuildPrefix(discordId);
-
-  useEffect(() => {
-    void fetchPrefix(discordId, convex);
-  }, [discordId, convex, fetchPrefix]);
+  const { prefix } = useGuildPrefix(discordId);
 
   const [name, setName] = useState(initialData?.name ?? "");
   const [description, setDescription] = useState(

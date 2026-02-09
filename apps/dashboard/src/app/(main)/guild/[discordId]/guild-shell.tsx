@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useConvex } from "convex/react";
 
-import { useCurrentUser } from "~/stores/current-user-store";
-import { useGuild } from "~/stores/guild-store";
+import { useGuild } from "~/hooks/use-guild";
 import { Header } from "~/components/header";
 import { GuildSidebar } from "~/components/guild-sidebar";
 
@@ -17,15 +15,8 @@ export function GuildShell({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const convex = useConvex();
-  const { fetchUser } = useCurrentUser();
-  const { guild, fetchGuild } = useGuild(discordId);
+  const { guild } = useGuild(discordId);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  useEffect(() => {
-    void fetchUser(convex);
-    void fetchGuild(discordId, convex);
-  }, [convex, fetchUser, fetchGuild, discordId]);
 
   // Redirect if guild not found or no bot
   useEffect(() => {

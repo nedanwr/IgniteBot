@@ -8,8 +8,8 @@ import { api } from "@ignite-bot/convex";
 import type { GenericId } from "convex/values";
 import { useEffect } from "react";
 
-import { useGuild } from "~/stores/guild-store";
-import { useGuildPrefix } from "~/stores/guild-prefix-store";
+import { useGuild } from "~/hooks/use-guild";
+import { useGuildPrefix } from "~/hooks/use-guild-prefix";
 import { CommandEditor } from "~/components/command-editor";
 
 export function EditCommandPage({
