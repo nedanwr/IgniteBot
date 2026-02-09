@@ -5,12 +5,14 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
+  Trophy,
   MessageSquare,
   Settings,
   ScrollText,
   Zap,
-  Shield,
   Users,
+  Star,
+  TrendingUp,
   ArrowLeft,
   Sparkles,
   ChevronsUpDown,
@@ -72,6 +74,13 @@ export function GuildSidebar({
         match: "exact"
       },
       {
+        label: "Leaderboard",
+        href: `${basePath}/leaderboard`,
+        icon: <Trophy className="size-4" />,
+        match: "startsWith",
+        comingSoon: true
+      },
+      {
         label: "Audit Log",
         href: `${basePath}/audit-log`,
         icon: <ScrollText className="size-4" />,
@@ -84,32 +93,43 @@ export function GuildSidebar({
         match: "startsWith"
       },
       {
-        label: "Custom Commands",
-        href: `${basePath}/commands`,
-        icon: <MessageSquare className="size-4" />,
+        label: "Welcome Messages",
+        href: `${basePath}/welcome`,
+        icon: <Users className="size-4" />,
         match: "startsWith",
-        section: "Server Management"
+        section: "Core",
+        comingSoon: true
       },
       {
         label: "Auto Moderation",
         href: `${basePath}/moderation`,
         icon: <Zap className="size-4" />,
         match: "startsWith",
+        section: "Core",
         comingSoon: true
       },
       {
-        label: "Verification",
-        href: `${basePath}/verification`,
-        icon: <Shield className="size-4" />,
+        label: "Levels",
+        href: `${basePath}/levels`,
+        icon: <TrendingUp className="size-4" />,
         match: "startsWith",
+        section: "Core",
         comingSoon: true
       },
       {
-        label: "Welcome Messages",
-        href: `${basePath}/welcome`,
-        icon: <Users className="size-4" />,
+        label: "Starboards",
+        href: `${basePath}/starboards`,
+        icon: <Star className="size-4" />,
         match: "startsWith",
+        section: "Core",
         comingSoon: true
+      },
+      {
+        label: "Custom Commands",
+        href: `${basePath}/commands`,
+        icon: <MessageSquare className="size-4" />,
+        match: "startsWith",
+        section: "Server Management"
       }
     ],
     [basePath]
