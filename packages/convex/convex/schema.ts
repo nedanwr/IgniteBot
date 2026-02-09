@@ -53,7 +53,8 @@ export default defineSchema({
 
   guildSettings: defineTable({
     guildDiscordId: v.string(),
-    prefix: v.string()
+    prefix: v.string(),
+    enabledPlugins: v.optional(v.array(v.string()))
   }).index("by_guild", ["guildDiscordId"]),
 
   auditLog: defineTable({
