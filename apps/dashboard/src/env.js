@@ -8,11 +8,11 @@ export const env = createEnv({
    */
   server: {
     NODE_ENV: z.enum(["development", "test", "production"]),
-    R2_ENDPOINT: z.string(),
-    R2_ACCESS_KEY_ID: z.string(),
-    R2_SECRET_ACCESS_KEY: z.string(),
-    R2_BUCKET_NAME: z.string(),
-    R2_PUBLIC_URL: z.string()
+    R2_ENDPOINT: z.string().url(),
+    R2_ACCESS_KEY_ID: z.string().min(1),
+    R2_SECRET_ACCESS_KEY: z.string().min(1),
+    R2_BUCKET_NAME: z.string().min(1),
+    R2_PUBLIC_URL: z.string().url()
   },
 
   /**
@@ -21,8 +21,8 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
-    NEXT_PUBLIC_CONVEX_URL: z.string(),
-    NEXT_PUBLIC_DISCORD_CLIENT_ID: z.string()
+    NEXT_PUBLIC_CONVEX_URL: z.string().url(),
+    NEXT_PUBLIC_DISCORD_CLIENT_ID: z.string().min(1)
   },
 
   /**
