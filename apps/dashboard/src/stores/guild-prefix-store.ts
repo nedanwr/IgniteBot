@@ -10,6 +10,8 @@ type GuildPrefixState = {
   invalidatePrefix: (discordId: string) => void;
 };
 
+const MAX_CACHED_PREFIXES = 50;
+
 export const useGuildPrefixStore = create<GuildPrefixState>((set, get) => ({
   prefixes: {},
   loading: {},
@@ -18,6 +20,14 @@ export const useGuildPrefixStore = create<GuildPrefixState>((set, get) => ({
   fetchPrefix: async (discordId, client) => {
     const { prefixes, loading } = get();
     if (prefixes[discordId] !== undefined || loading[discordId]) return;
+
+    // Evict oldest entries if cache is full
+    const keys = Object.keys(prefixes);
+    if (keys.length >= MAX_CACHED_PREFIXES) {
+      const evictKey = keys[0]!;
+      const { [evictKey]: _, ...rest } = prefixes;
+      set({ prefixes: rest });
+    }
 
     set({
       loading: { ...get().loading, [discordId]: true },

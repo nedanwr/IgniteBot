@@ -20,6 +20,8 @@ type GuildState = {
   invalidateGuild: (discordId: string) => void;
 };
 
+const MAX_CACHED_GUILDS = 50;
+
 export const useGuildStore = create<GuildState>((set, get) => ({
   guilds: {},
   loading: {},
@@ -28,6 +30,14 @@ export const useGuildStore = create<GuildState>((set, get) => ({
   fetchGuild: async (discordId, client) => {
     const { guilds, loading } = get();
     if (discordId in guilds || loading[discordId]) return;
+
+    // Evict oldest entries if cache is full
+    const keys = Object.keys(guilds);
+    if (keys.length >= MAX_CACHED_GUILDS) {
+      const evictKey = keys[0]!;
+      const { [evictKey]: _, ...rest } = guilds;
+      set({ guilds: rest });
+    }
 
     set({
       loading: { ...get().loading, [discordId]: true },
