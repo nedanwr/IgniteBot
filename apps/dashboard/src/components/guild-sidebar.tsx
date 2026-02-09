@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -13,7 +13,6 @@ import {
   Users,
   Star,
   TrendingUp,
-  ArrowLeft,
   Sparkles,
   ChevronsUpDown,
   Check,
@@ -21,8 +20,11 @@ import {
 } from "lucide-react";
 import { useQuery } from "convex/react";
 import { api } from "@ignite-bot/convex";
+import type { PluginId } from "@ignite-bot/convex/lib/plugins";
+import { toast } from "sonner";
 
 import { getGuildIconUrl, getGuildInitials } from "~/lib/discord";
+import { useGuildPlugins } from "~/hooks/use-guild-plugins";
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import {
@@ -33,6 +35,16 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator
 } from "~/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from "~/components/ui/alert-dialog";
 
 type GuildSidebarProps = {
   discordId: string;
@@ -51,6 +63,7 @@ type NavItem = {
   match: "exact" | "startsWith";
   comingSoon?: boolean;
   section?: string;
+  pluginId?: PluginId;
 };
 
 export function GuildSidebar({
@@ -62,6 +75,8 @@ export function GuildSidebar({
   const pathname = usePathname();
   const router = useRouter();
   const guilds = useQuery(api.guilds.listGuilds);
+  const { isEnabled, enablePlugin } = useGuildPlugins(discordId);
+  const [enableTarget, setEnableTarget] = useState<NavItem | null>(null);
 
   const basePath = `/guild/${discordId}`;
 
@@ -78,13 +93,15 @@ export function GuildSidebar({
         href: `${basePath}/leaderboard`,
         icon: <Trophy className="size-4" />,
         match: "startsWith",
-        comingSoon: true
+        comingSoon: true,
+        pluginId: "leaderboard"
       },
       {
         label: "Audit Log",
         href: `${basePath}/audit-log`,
         icon: <ScrollText className="size-4" />,
-        match: "startsWith"
+        match: "startsWith",
+        pluginId: "auditLog"
       },
       {
         label: "Settings",
@@ -98,7 +115,8 @@ export function GuildSidebar({
         icon: <Users className="size-4" />,
         match: "startsWith",
         section: "Core",
-        comingSoon: true
+        comingSoon: true,
+        pluginId: "welcomeMessages"
       },
       {
         label: "Auto Moderation",
@@ -106,7 +124,8 @@ export function GuildSidebar({
         icon: <Zap className="size-4" />,
         match: "startsWith",
         section: "Core",
-        comingSoon: true
+        comingSoon: true,
+        pluginId: "autoModeration"
       },
       {
         label: "Levels",
@@ -114,7 +133,8 @@ export function GuildSidebar({
         icon: <TrendingUp className="size-4" />,
         match: "startsWith",
         section: "Core",
-        comingSoon: true
+        comingSoon: true,
+        pluginId: "levels"
       },
       {
         label: "Starboards",
@@ -122,14 +142,16 @@ export function GuildSidebar({
         icon: <Star className="size-4" />,
         match: "startsWith",
         section: "Core",
-        comingSoon: true
+        comingSoon: true,
+        pluginId: "starboards"
       },
       {
         label: "Custom Commands",
         href: `${basePath}/commands`,
         icon: <MessageSquare className="size-4" />,
         match: "startsWith",
-        section: "Server Management"
+        section: "Server Management",
+        pluginId: "customCommands"
       }
     ],
     [basePath]
@@ -139,6 +161,18 @@ export function GuildSidebar({
     if (item.match === "exact") return pathname === item.href;
     return pathname.startsWith(item.href);
   }
+
+  const handleEnable = async () => {
+    if (!enableTarget?.pluginId) return;
+    try {
+      await enablePlugin(enableTarget.pluginId);
+      toast.success(`Enabled ${enableTarget.label}`);
+    } catch {
+      toast.error(`Failed to enable ${enableTarget.label}`);
+    } finally {
+      setEnableTarget(null);
+    }
+  };
 
   const guildInitials = getGuildInitials(guild.name);
 
@@ -234,7 +268,7 @@ export function GuildSidebar({
       </div>
 
       {/* Nav links */}
-      <nav className="flex-1 space-y-1.5 px-3 pt-3">
+      <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 pt-3">
         {navItems.map((item, index) => {
           const active = isActive(item);
           const prevSection =
@@ -249,6 +283,7 @@ export function GuildSidebar({
             </div>
           ) : null;
 
+          // Coming soon takes priority — fully disabled
           if (item.comingSoon) {
             return (
               <div key={item.label}>
@@ -262,6 +297,25 @@ export function GuildSidebar({
                   <span>{item.label}</span>
                   <span className="bg-secondary/60 text-muted-foreground/50 ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium">
                     Soon
+                  </span>
+                </button>
+              </div>
+            );
+          }
+
+          // Plugin disabled — greyed out, click opens enable dialog
+          if (item.pluginId && !isEnabled(item.pluginId)) {
+            return (
+              <div key={item.label}>
+                {sectionLabel}
+                <button
+                  className="text-muted-foreground/40 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-secondary/30"
+                  onClick={() => setEnableTarget(item)}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                  <span className="bg-secondary/60 text-muted-foreground/50 ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium">
+                    Off
                   </span>
                 </button>
               </div>
@@ -292,18 +346,6 @@ export function GuildSidebar({
           );
         })}
       </nav>
-
-      {/* Back to servers */}
-      <div className="border-border/50 border-t p-3">
-        <Link
-          href="/"
-          onClick={onClose}
-          className="text-muted-foreground hover:bg-secondary/50 hover:text-foreground flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors"
-        >
-          <ArrowLeft className="size-4" />
-          <span>Back to servers</span>
-        </Link>
-      </div>
     </div>
   );
 
@@ -326,6 +368,32 @@ export function GuildSidebar({
           </aside>
         </>
       )}
+
+      {/* Enable plugin dialog */}
+      <AlertDialog
+        open={enableTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setEnableTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Enable {enableTarget?.label}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will enable the {enableTarget?.label} plugin for this
+              server. You can disable it at any time.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleEnable}>
+              Enable
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
