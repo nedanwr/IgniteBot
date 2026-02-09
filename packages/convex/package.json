@@ -11,6 +11,10 @@
     },
     "./dataModel": {
       "types": "./convex/_generated/dataModel.d.ts"
+    },
+    "./lib/plugins": {
+      "types": "./convex/lib/plugins.ts",
+      "import": "./convex/lib/plugins.ts"
     }
   },
   "scripts": {
