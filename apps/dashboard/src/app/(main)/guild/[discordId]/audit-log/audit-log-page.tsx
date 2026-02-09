@@ -7,13 +7,16 @@ import {
   MessageSquare,
   Hash,
   Shield,
-  Server
+  Server,
+  Puzzle
 } from "lucide-react";
 import { useQuery } from "convex/react";
 import { api } from "@ignite-bot/convex";
 
 import { useGuild } from "~/hooks/use-guild";
 import { Badge } from "~/components/ui/badge";
+import { PluginHeader } from "~/components/plugin-header";
+import { PluginGuard } from "~/components/plugin-guard";
 
 const ACTION_LABELS: Record<string, string> = {
   "command.created": "Created command",
@@ -28,7 +31,9 @@ const ACTION_LABELS: Record<string, string> = {
   "channel.deleted": "Channel deleted",
   "role.created": "Role created",
   "role.updated": "Role updated",
-  "role.deleted": "Role deleted"
+  "role.deleted": "Role deleted",
+  "plugin.enabled": "Enabled plugin",
+  "plugin.disabled": "Disabled plugin"
 };
 
 function getActionIcon(action: string) {
@@ -36,6 +41,7 @@ function getActionIcon(action: string) {
     return <MessageSquare className="size-4" />;
   if (action.startsWith("channel.")) return <Hash className="size-4" />;
   if (action.startsWith("role.")) return <Shield className="size-4" />;
+  if (action.startsWith("plugin.")) return <Puzzle className="size-4" />;
   return <Server className="size-4" />;
 }
 
@@ -67,21 +73,14 @@ export function AuditLogPage({ discordId }: { discordId: string }) {
   }
 
   return (
+    <PluginGuard pluginId="auditLog">
     <div className="mx-auto max-w-6xl px-6 py-12">
-      {/* Page header */}
-      <div className="animate-fade-up mb-8 flex items-center gap-4">
-        <div className="bg-primary/10 text-primary flex size-12 items-center justify-center rounded-xl">
-          <ScrollText className="size-6" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-medium tracking-tight sm:text-3xl">
-            Audit Log
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Track changes made to your server
-          </p>
-        </div>
-      </div>
+      <PluginHeader
+        pluginId="auditLog"
+        icon={<ScrollText className="size-6" />}
+        title="Audit Log"
+        description="Track changes made to your server"
+      />
 
       {/* Log entries */}
       <div className="animate-fade-up stagger-1 space-y-2">
@@ -172,5 +171,6 @@ export function AuditLogPage({ discordId }: { discordId: string }) {
         )}
       </div>
     </div>
+    </PluginGuard>
   );
 }
