@@ -179,6 +179,39 @@
   }
 }
 
+/* Prose styling for legal pages */
+.prose-legal h2 {
+  @apply text-foreground mt-10 mb-4 text-xl font-semibold;
+}
+
+.prose-legal p {
+  @apply text-muted-foreground mb-4 leading-relaxed;
+}
+
+.prose-legal ul {
+  @apply text-muted-foreground mb-4 list-disc space-y-2 pl-6;
+}
+
+.prose-legal li {
+  @apply leading-relaxed;
+}
+
+.prose-legal strong {
+  @apply text-foreground font-medium;
+}
+
+.prose-legal section {
+  @apply mb-8;
+}
+
+.prose-legal code {
+  @apply bg-secondary text-secondary-foreground rounded px-1.5 py-0.5 text-sm;
+}
+
+.prose-legal a {
+  @apply text-primary hover:underline;
+}
+
 /* Custom animations */
 @keyframes fade-up {
   from {
