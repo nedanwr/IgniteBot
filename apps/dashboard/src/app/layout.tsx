@@ -15,7 +15,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: {
     default: "Ignite",
-    template: "%s"
+    template: "%s | Ignite"
   },
   description: "Manage your Discord servers with Ignite"
 };
