@@ -3,6 +3,8 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { verifyGuildAccess } from "./lib/access";
 import { responseValidator } from "./schema";
+import { logAudit } from "./auditLog";
+import { auth } from "./auth";
 
 export const list = query({
   args: { guildDiscordId: v.string() },
@@ -62,7 +64,7 @@ export const create = mutation({
 
     const now = Date.now();
 
-    return await ctx.db.insert("commands", {
+    const commandId = await ctx.db.insert("commands", {
       guildDiscordId,
       name: name.toLowerCase(),
       description,
@@ -71,6 +73,19 @@ export const create = mutation({
       createdAt: now,
       updatedAt: now
     });
+
+    const userId = await auth.getUserId(ctx);
+    await logAudit(ctx, {
+      guildDiscordId,
+      action: "command.created",
+      source: "dashboard",
+      actorId: userId!.toString(),
+      targetType: "command",
+      targetId: commandId,
+      targetName: name.toLowerCase()
+    });
+
+    return commandId;
   }
 });
 
@@ -129,6 +144,27 @@ export const update = mutation({
     if (enabled !== undefined) updates.enabled = enabled;
 
     await ctx.db.patch(id, updates);
+
+    const changes: Record<string, unknown> = {};
+    if (name !== undefined && name.toLowerCase() !== command.name)
+      changes.name = { from: command.name, to: name.toLowerCase() };
+    if (enabled !== undefined && enabled !== command.enabled)
+      changes.enabled = { from: command.enabled, to: enabled };
+    if (description !== undefined && description !== command.description)
+      changes.description = { from: command.description, to: description };
+    if (responses !== undefined) changes.responses = "updated";
+
+    const userId = await auth.getUserId(ctx);
+    await logAudit(ctx, {
+      guildDiscordId: command.guildDiscordId,
+      action: "command.updated",
+      source: "dashboard",
+      actorId: userId!.toString(),
+      targetType: "command",
+      targetId: id,
+      targetName: command.name,
+      metadata: changes
+    });
   }
 });
 
@@ -141,6 +177,17 @@ export const remove = mutation({
     }
 
     await verifyGuildAccess(ctx, command.guildDiscordId);
+
+    const userId = await auth.getUserId(ctx);
+    await logAudit(ctx, {
+      guildDiscordId: command.guildDiscordId,
+      action: "command.deleted",
+      source: "dashboard",
+      actorId: userId!.toString(),
+      targetType: "command",
+      targetId: id,
+      targetName: command.name
+    });
 
     await ctx.db.delete(id);
   }

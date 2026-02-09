@@ -2,6 +2,8 @@ import { v } from "convex/values";
 
 import { internalQuery, mutation, query } from "./_generated/server";
 import { verifyGuildAccess } from "./lib/access";
+import { logAudit } from "./auditLog";
+import { auth } from "./auth";
 
 const DEFAULT_PREFIX = "!";
 
@@ -34,11 +36,23 @@ export const updatePrefix = mutation({
       .withIndex("by_guild", (q) => q.eq("guildDiscordId", guildDiscordId))
       .first();
 
+    const oldPrefix = existing?.prefix ?? DEFAULT_PREFIX;
+
     if (existing) {
       await ctx.db.patch(existing._id, { prefix: trimmed });
     } else {
       await ctx.db.insert("guildSettings", { guildDiscordId, prefix: trimmed });
     }
+
+    const userId = await auth.getUserId(ctx);
+    await logAudit(ctx, {
+      guildDiscordId,
+      action: "guild.prefix_updated",
+      source: "dashboard",
+      actorId: userId!.toString(),
+      targetType: "guild",
+      metadata: { from: oldPrefix, to: trimmed }
+    });
   }
 });
 

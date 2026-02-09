@@ -73,4 +73,17 @@ http.route({
   }),
 });
 
+http.route({
+  path: "/bot/audit-log",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    if (!verifyBotSecret(request)) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+    const body = await request.json();
+    await ctx.runMutation(internal.auditLog.create, body);
+    return Response.json({ success: true });
+  }),
+});
+
 export default http;
