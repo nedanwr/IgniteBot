@@ -48,6 +48,7 @@ type NavItem = {
   icon: React.ReactNode;
   match: "exact" | "startsWith";
   comingSoon?: boolean;
+  section?: string;
 };
 
 export function GuildSidebar({
@@ -71,16 +72,17 @@ export function GuildSidebar({
         match: "exact"
       },
       {
-        label: "Custom Commands",
-        href: `${basePath}/commands`,
-        icon: <MessageSquare className="size-4" />,
-        match: "startsWith"
-      },
-      {
         label: "Settings",
         href: `${basePath}/settings`,
         icon: <Settings className="size-4" />,
         match: "startsWith"
+      },
+      {
+        label: "Custom Commands",
+        href: `${basePath}/commands`,
+        icon: <MessageSquare className="size-4" />,
+        match: "startsWith",
+        section: "Server Management"
       },
       {
         label: "Audit Log",
@@ -108,7 +110,7 @@ export function GuildSidebar({
         icon: <Users className="size-4" />,
         match: "startsWith",
         comingSoon: true
-      },
+      }
     ],
     [basePath]
   );
@@ -211,52 +213,62 @@ export function GuildSidebar({
         </DropdownMenu>
       </div>
 
-      {/* Section label */}
-      <div className="px-5 pt-5 pb-2">
-        <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
-          Modules
-        </span>
-      </div>
-
       {/* Nav links */}
-      <nav className="flex-1 space-y-1.5 px-3">
-        {navItems.map((item) => {
+      <nav className="flex-1 space-y-1.5 px-3 pt-3">
+        {navItems.map((item, index) => {
           const active = isActive(item);
+          const prevSection =
+            index > 0 ? navItems[index - 1]?.section : undefined;
+          const showSection = item.section && item.section !== prevSection;
+
+          const sectionLabel = showSection ? (
+            <div key={`section-${item.section}`} className="px-3 pt-4 pb-1">
+              <span className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+                {item.section}
+              </span>
+            </div>
+          ) : null;
 
           if (item.comingSoon) {
             return (
-              <button
-                key={item.label}
-                disabled
-                aria-disabled="true"
-                className="text-muted-foreground/40 flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm"
-              >
-                {item.icon}
-                <span>{item.label}</span>
-                <span className="bg-secondary/60 text-muted-foreground/50 ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium">
-                  Soon
-                </span>
-              </button>
+              <div key={item.label}>
+                {sectionLabel}
+                <button
+                  disabled
+                  aria-disabled="true"
+                  className="text-muted-foreground/40 flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm"
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                  <span className="bg-secondary/60 text-muted-foreground/50 ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium">
+                    Soon
+                  </span>
+                </button>
+              </div>
             );
           }
 
           return (
-            <Link
-              key={item.label}
-              href={item.href}
-              onClick={onClose}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all ${
-                active
-                  ? "bg-secondary text-primary font-medium shadow-sm"
-                  : "text-foreground/70 hover:bg-secondary/50 hover:text-foreground"
-              }`}
-            >
-              <span className={active ? "text-primary" : ""}>{item.icon}</span>
-              <span>{item.label}</span>
-              {active && (
-                <div className="bg-primary ml-auto size-1.5 rounded-full" />
-              )}
-            </Link>
+            <div key={item.label}>
+              {sectionLabel}
+              <Link
+                href={item.href}
+                onClick={onClose}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all ${
+                  active
+                    ? "bg-secondary text-primary font-medium shadow-sm"
+                    : "text-foreground/70 hover:bg-secondary/50 hover:text-foreground"
+                }`}
+              >
+                <span className={active ? "text-primary" : ""}>
+                  {item.icon}
+                </span>
+                <span>{item.label}</span>
+                {active && (
+                  <div className="bg-primary ml-auto size-1.5 rounded-full" />
+                )}
+              </Link>
+            </div>
           );
         })}
       </nav>
