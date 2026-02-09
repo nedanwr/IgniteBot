@@ -99,7 +99,7 @@ export function GuildPage({ discordId }: { discordId: string }) {
           <h1 className="text-3xl font-medium tracking-tight sm:text-4xl">
             {guild.name}
           </h1>
-          <p className="text-muted-foreground mt-1">Server Overview</p>
+          <p className="text-muted-foreground mt-1">Overview</p>
         </div>
       </div>
 
