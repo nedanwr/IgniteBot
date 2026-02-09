@@ -37,7 +37,7 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 function generateId(): string {
-  return Math.random().toString(36).substring(2, 9);
+  return crypto.randomUUID();
 }
 
 export function CommandEditor({
@@ -278,7 +278,10 @@ export function CommandEditor({
 
         <div className="space-y-5 p-5">
           <div>
-            <label htmlFor="command-name" className="text-foreground mb-2 block text-sm font-medium">
+            <label
+              htmlFor="command-name"
+              className="text-foreground mb-2 block text-sm font-medium"
+            >
               Command Name
             </label>
             <div className="flex items-center">
@@ -298,7 +301,10 @@ export function CommandEditor({
           </div>
 
           <div>
-            <label htmlFor="command-description" className="text-foreground mb-2 block text-sm font-medium">
+            <label
+              htmlFor="command-description"
+              className="text-foreground mb-2 block text-sm font-medium"
+            >
               Description{" "}
               <span className="text-muted-foreground font-normal">
                 (optional)
