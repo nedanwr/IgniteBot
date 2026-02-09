@@ -12,7 +12,8 @@ import {
   Bot,
   Hash,
   Shield,
-  Server
+  Server,
+  Puzzle
 } from "lucide-react";
 import { useQuery } from "convex/react";
 import { api } from "@ignite-bot/convex";
@@ -51,7 +52,9 @@ const AUDIT_ACTION_LABELS: Record<string, string> = {
   "channel.deleted": "Channel deleted",
   "role.created": "Role created",
   "role.updated": "Role updated",
-  "role.deleted": "Role deleted"
+  "role.deleted": "Role deleted",
+  "plugin.enabled": "Enabled plugin",
+  "plugin.disabled": "Disabled plugin"
 };
 
 function getActionIcon(action: string) {
@@ -59,6 +62,7 @@ function getActionIcon(action: string) {
     return <MessageSquare className="size-4" />;
   if (action.startsWith("channel.")) return <Hash className="size-4" />;
   if (action.startsWith("role.")) return <Shield className="size-4" />;
+  if (action.startsWith("plugin.")) return <Puzzle className="size-4" />;
   return <Server className="size-4" />;
 }
 
