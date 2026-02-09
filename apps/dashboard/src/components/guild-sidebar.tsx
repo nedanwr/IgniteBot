@@ -11,7 +11,6 @@ import {
   Zap,
   Shield,
   Users,
-  Bell,
   ArrowLeft,
   Sparkles,
   ChevronsUpDown,
@@ -110,13 +109,6 @@ export function GuildSidebar({
         match: "startsWith",
         comingSoon: true
       },
-      {
-        label: "Notifications",
-        href: `${basePath}/notifications`,
-        icon: <Bell className="size-4" />,
-        match: "startsWith",
-        comingSoon: true
-      }
     ],
     [basePath]
   );
