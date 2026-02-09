@@ -26,7 +26,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   ],
   callbacks: {
     async afterUserCreatedOrUpdated(ctx, { userId }) {
-      await ctx.scheduler.runAfter(0, internal.guilds.fetchGuildsInternal, {
+      await ctx.scheduler.runAfter(0, internal.guilds.encryptAndFetchGuilds, {
         userId
       });
     }
