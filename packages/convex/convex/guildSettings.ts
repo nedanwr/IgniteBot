@@ -4,6 +4,7 @@ import { internalQuery, mutation, query } from "./_generated/server";
 import { verifyGuildAccess } from "./lib/access";
 import { logAudit } from "./auditLog";
 import { auth } from "./auth";
+import { PLUGIN_IDS, isPluginEnabled } from "./lib/plugins";
 
 const DEFAULT_PREFIX = "!";
 
@@ -115,5 +116,101 @@ export const getPrefix = internalQuery({
       .first();
 
     return settings?.prefix ?? DEFAULT_PREFIX;
+  }
+});
+
+export const enablePlugin = mutation({
+  args: { guildDiscordId: v.string(), pluginId: v.string() },
+  handler: async (ctx, { guildDiscordId, pluginId }) => {
+    await verifyGuildAccess(ctx, guildDiscordId);
+
+    if (!PLUGIN_IDS.includes(pluginId as (typeof PLUGIN_IDS)[number])) {
+      throw new Error(`Unknown plugin: ${pluginId}`);
+    }
+
+    const existing = await ctx.db
+      .query("guildSettings")
+      .withIndex("by_guild", (q) => q.eq("guildDiscordId", guildDiscordId))
+      .first();
+
+    if (existing) {
+      const current = existing.enabledPlugins ?? [...PLUGIN_IDS];
+      if (!current.includes(pluginId)) {
+        await ctx.db.patch(existing._id, {
+          enabledPlugins: [...current, pluginId]
+        });
+      }
+    } else {
+      await ctx.db.insert("guildSettings", {
+        guildDiscordId,
+        prefix: DEFAULT_PREFIX,
+        enabledPlugins: [...PLUGIN_IDS]
+      });
+    }
+
+    const userId = await auth.getUserId(ctx);
+    await logAudit(ctx, {
+      guildDiscordId,
+      action: "plugin.enabled",
+      source: "dashboard",
+      actorId: userId!.toString(),
+      targetType: "plugin",
+      targetName: pluginId
+    });
+  }
+});
+
+export const disablePlugin = mutation({
+  args: { guildDiscordId: v.string(), pluginId: v.string() },
+  handler: async (ctx, { guildDiscordId, pluginId }) => {
+    await verifyGuildAccess(ctx, guildDiscordId);
+
+    if (!PLUGIN_IDS.includes(pluginId as (typeof PLUGIN_IDS)[number])) {
+      throw new Error(`Unknown plugin: ${pluginId}`);
+    }
+
+    const existing = await ctx.db
+      .query("guildSettings")
+      .withIndex("by_guild", (q) => q.eq("guildDiscordId", guildDiscordId))
+      .first();
+
+    if (existing) {
+      const current = existing.enabledPlugins ?? [...PLUGIN_IDS];
+      await ctx.db.patch(existing._id, {
+        enabledPlugins: current.filter((id) => id !== pluginId)
+      });
+    } else {
+      await ctx.db.insert("guildSettings", {
+        guildDiscordId,
+        prefix: DEFAULT_PREFIX,
+        enabledPlugins: PLUGIN_IDS.filter((id) => id !== pluginId)
+      });
+    }
+
+    const userId = await auth.getUserId(ctx);
+    await logAudit(ctx, {
+      guildDiscordId,
+      action: "plugin.disabled",
+      source: "dashboard",
+      actorId: userId!.toString(),
+      targetType: "plugin",
+      targetName: pluginId
+    });
+  }
+});
+
+// Check if a specific plugin is enabled (internal, for bot HTTP endpoints)
+export const isPluginEnabledQuery = internalQuery({
+  args: { guildDiscordId: v.string(), pluginId: v.string() },
+  handler: async (ctx, { guildDiscordId, pluginId }) => {
+    const settings = await ctx.db
+      .query("guildSettings")
+      .withIndex("by_guild", (q) => q.eq("guildDiscordId", guildDiscordId))
+      .first();
+
+    return isPluginEnabled(
+      settings?.enabledPlugins,
+      pluginId as (typeof PLUGIN_IDS)[number]
+    );
   }
 });
