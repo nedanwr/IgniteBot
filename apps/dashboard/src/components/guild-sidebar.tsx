@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   MessageSquare,
   Settings,
+  ScrollText,
   Zap,
   Shield,
   Users,
@@ -80,6 +81,12 @@ export function GuildSidebar({
         label: "Server Settings",
         href: `${basePath}/settings`,
         icon: <Settings className="size-4" />,
+        match: "startsWith"
+      },
+      {
+        label: "Audit Log",
+        href: `${basePath}/audit-log`,
+        icon: <ScrollText className="size-4" />,
         match: "startsWith"
       },
       {
