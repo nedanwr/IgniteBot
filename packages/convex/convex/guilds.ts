@@ -9,6 +9,7 @@ import {
 } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { auth } from "./auth";
+import { decryptToken, encryptToken, isEncrypted } from "./lib/crypto";
 
 interface DiscordGuild {
   id: string;
@@ -29,6 +30,14 @@ function isTokenExpired(expiresAt?: number): boolean {
   if (!expiresAt) return false; // If no expiry info, assume valid
   // Add 60s buffer so we refresh before actual expiry
   return Date.now() / 1000 >= expiresAt - 60;
+}
+
+function getEncryptionKey(): string {
+  const key = process.env.TOKEN_ENCRYPTION_KEY;
+  if (!key) {
+    throw new Error("TOKEN_ENCRYPTION_KEY environment variable is not set");
+  }
+  return key;
 }
 
 async function refreshDiscordToken(refreshToken: string): Promise<{
@@ -66,20 +75,38 @@ async function fetchAndSyncGuilds(ctx: ActionCtx, userId: GenericId<"users">) {
     throw new Error("No access token found");
   }
 
-  let accessToken = user.accessToken;
+  const encryptionKey = getEncryptionKey();
+  let accessToken = await decryptToken(user.accessToken, encryptionKey);
+  let needsEncryption = !isEncrypted(user.accessToken);
 
   // Refresh token if expired
   if (isTokenExpired(user.expiresAt) && user.refreshToken) {
-    const tokens = await refreshDiscordToken(user.refreshToken);
+    const plainRefreshToken = await decryptToken(
+      user.refreshToken,
+      encryptionKey
+    );
+    const tokens = await refreshDiscordToken(plainRefreshToken);
     accessToken = tokens.access_token;
+
+    // Encrypt new tokens before storing
+    const encryptedAccess = await encryptToken(
+      tokens.access_token,
+      encryptionKey
+    );
+    const encryptedRefresh = await encryptToken(
+      tokens.refresh_token,
+      encryptionKey
+    );
 
     await ctx.runMutation(internal.guilds.updateUserTokens, {
       userId,
-      accessToken: tokens.access_token,
-      refreshToken: tokens.refresh_token,
+      accessToken: encryptedAccess,
+      refreshToken: encryptedRefresh,
       expiresIn: tokens.expires_in,
       expiresAt: Math.floor(Date.now() / 1000) + tokens.expires_in
     });
+
+    needsEncryption = false;
   }
 
   const response = await fetch("https://discord.com/api/users/@me/guilds", {
@@ -93,6 +120,25 @@ async function fetchAndSyncGuilds(ctx: ActionCtx, userId: GenericId<"users">) {
   }
 
   const allGuilds: DiscordGuild[] = await response.json();
+
+  // Lazy migration: encrypt plaintext tokens after successful API call
+  if (needsEncryption) {
+    const encryptedAccess = await encryptToken(accessToken, encryptionKey);
+    const encryptedRefresh = user.refreshToken
+      ? await encryptToken(
+          await decryptToken(user.refreshToken, encryptionKey),
+          encryptionKey
+        )
+      : undefined;
+
+    await ctx.runMutation(internal.guilds.updateUserTokens, {
+      userId,
+      accessToken: encryptedAccess,
+      refreshToken: encryptedRefresh ?? user.refreshToken ?? "",
+      expiresIn: user.expiresIn ?? 0,
+      expiresAt: user.expiresAt ?? 0
+    });
+  }
 
   // Only keep guilds where user has MANAGE_GUILD permission
   const manageableGuilds = allGuilds.filter(
@@ -113,7 +159,41 @@ async function fetchAndSyncGuilds(ctx: ActionCtx, userId: GenericId<"users">) {
   return manageableGuilds.length;
 }
 
-// Called automatically after user authentication
+// Called after OAuth to encrypt tokens immediately, then fetch guilds
+export const encryptAndFetchGuilds = internalAction({
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }) => {
+    const user = await ctx.runQuery(internal.guilds.getUser, { userId });
+    if (!user?.accessToken) {
+      throw new Error("No access token found");
+    }
+
+    const encryptionKey = getEncryptionKey();
+
+    // Encrypt tokens if they are still plaintext
+    if (!isEncrypted(user.accessToken)) {
+      const encryptedAccess = await encryptToken(
+        user.accessToken,
+        encryptionKey
+      );
+      const encryptedRefresh = user.refreshToken
+        ? await encryptToken(user.refreshToken, encryptionKey)
+        : "";
+
+      await ctx.runMutation(internal.guilds.updateUserTokens, {
+        userId,
+        accessToken: encryptedAccess,
+        refreshToken: encryptedRefresh,
+        expiresIn: user.expiresIn ?? 0,
+        expiresAt: user.expiresAt ?? 0
+      });
+    }
+
+    return await fetchAndSyncGuilds(ctx, userId);
+  }
+});
+
+// Called automatically after user authentication (kept for backward compat)
 export const fetchGuildsInternal = internalAction({
   args: { userId: v.id("users") },
   handler: async (ctx, { userId }) => {
