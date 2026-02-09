@@ -18,6 +18,8 @@ import { useGuild } from "~/hooks/use-guild";
 import { useGuildPrefix } from "~/hooks/use-guild-prefix";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { PluginHeader } from "~/components/plugin-header";
+import { PluginGuard } from "~/components/plugin-guard";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -168,93 +170,85 @@ export function CommandsPage({ discordId }: { discordId: string }) {
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-12">
-      {/* Page header */}
-      <div className="animate-fade-up mb-8 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="bg-primary/10 text-primary flex size-12 items-center justify-center rounded-xl">
-            <MessageSquare className="size-6" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-medium tracking-tight sm:text-3xl">
-              Custom Commands
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Create custom commands for your community
-            </p>
-          </div>
+    <PluginGuard pluginId="customCommands">
+      <div className="mx-auto max-w-6xl px-6 py-12">
+        <PluginHeader
+          pluginId="customCommands"
+          icon={<MessageSquare className="size-6" />}
+          title="Custom Commands"
+          description="Create custom commands for your community"
+        >
+          <Button asChild className="gap-2">
+            <Link href={`/guild/${discordId}/commands/new`}>
+              <Plus className="size-4" />
+              New Command
+            </Link>
+          </Button>
+        </PluginHeader>
+
+        {/* Commands list */}
+        <div className="animate-fade-up stagger-1 space-y-3">
+          {commands.length === 0 ? (
+            <div className="border-border/50 bg-card/50 flex flex-col items-center justify-center rounded-2xl border border-dashed py-16">
+              <div className="bg-secondary text-muted-foreground mb-4 flex size-12 items-center justify-center rounded-xl">
+                <MessageSquare className="size-6" />
+              </div>
+              <p className="text-muted-foreground mb-4">
+                No commands yet. Create your first one!
+              </p>
+              <Button asChild className="gap-2">
+                <Link href={`/guild/${discordId}/commands/new`}>
+                  <Plus className="size-4" />
+                  Create Command
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            commands.map((command) => (
+              <CommandCard
+                key={command._id}
+                command={command as Command}
+                discordId={discordId}
+                prefix={prefix}
+                onDelete={() => setDeleteTarget(command as Command)}
+                onToggle={() => handleToggle(command as Command)}
+              />
+            ))
+          )}
         </div>
 
-        <Button asChild className="gap-2">
-          <Link href={`/guild/${discordId}/commands/new`}>
-            <Plus className="size-4" />
-            New Command
-          </Link>
-        </Button>
+        <AlertDialog
+          open={deleteTarget !== null}
+          onOpenChange={(open) => {
+            if (!open) setDeleteTarget(null);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete command</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete{" "}
+                <code className="bg-secondary rounded px-1.5 py-0.5 text-sm">
+                  {prefix}
+                  {deleteTarget?.name}
+                </code>
+                ? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                variant="destructive"
+                onClick={() => {
+                  if (deleteTarget) handleDelete(deleteTarget);
+                }}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
-
-      {/* Commands list */}
-      <div className="animate-fade-up stagger-1 space-y-3">
-        {commands.length === 0 ? (
-          <div className="border-border/50 bg-card/50 flex flex-col items-center justify-center rounded-2xl border border-dashed py-16">
-            <div className="bg-secondary text-muted-foreground mb-4 flex size-12 items-center justify-center rounded-xl">
-              <MessageSquare className="size-6" />
-            </div>
-            <p className="text-muted-foreground mb-4">
-              No commands yet. Create your first one!
-            </p>
-            <Button asChild className="gap-2">
-              <Link href={`/guild/${discordId}/commands/new`}>
-                <Plus className="size-4" />
-                Create Command
-              </Link>
-            </Button>
-          </div>
-        ) : (
-          commands.map((command) => (
-            <CommandCard
-              key={command._id}
-              command={command as Command}
-              discordId={discordId}
-              prefix={prefix}
-              onDelete={() => setDeleteTarget(command as Command)}
-              onToggle={() => handleToggle(command as Command)}
-            />
-          ))
-        )}
-      </div>
-
-      <AlertDialog
-        open={deleteTarget !== null}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null);
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete command</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete{" "}
-              <code className="bg-secondary rounded px-1.5 py-0.5 text-sm">
-                {prefix}
-                {deleteTarget?.name}
-              </code>
-              ? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              onClick={() => {
-                if (deleteTarget) handleDelete(deleteTarget);
-              }}
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+    </PluginGuard>
   );
 }
