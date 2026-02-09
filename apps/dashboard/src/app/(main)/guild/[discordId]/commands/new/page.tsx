@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { NewCommandPage } from "./new-command-page";
 
 export const metadata: Metadata = {
-  title: "New Command - Ignite"
+  title: "New Command"
 };
 
 export default async function Page({

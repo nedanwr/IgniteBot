@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { Dashboard } from "./dashboard-page";
 
 export const metadata: Metadata = {
-  title: "Your Servers | Dashboard - Ignite"
+  title: "Dashboard"
 };
 
 export default function DashboardPage() {

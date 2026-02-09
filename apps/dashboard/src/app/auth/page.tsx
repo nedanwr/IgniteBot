@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { AuthForm } from "./auth-form";
 
 export const metadata: Metadata = {
-  title: "Sign In - Ignite"
+  title: "Sign In"
 };
 
 export default function AuthPage() {

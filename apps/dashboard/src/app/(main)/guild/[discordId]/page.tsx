@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { GuildPage } from "./guild-page";
 
 export const metadata: Metadata = {
-  title: "Server Settings - Ignite"
+  title: "Server Overview"
 };
 
 export default async function Page({

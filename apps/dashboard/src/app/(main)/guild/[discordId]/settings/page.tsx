@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { SettingsPage } from "./settings-page";
 
 export const metadata: Metadata = {
-  title: "Server Settings - Ignite"
+  title: "Settings"
 };
 
 export default async function Page({
