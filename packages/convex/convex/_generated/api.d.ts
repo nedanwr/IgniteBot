@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as auditLog from "../auditLog.js";
 import type * as auth from "../auth.js";
 import type * as commands from "../commands.js";
 import type * as guildSettings from "../guildSettings.js";
@@ -24,6 +25,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  auditLog: typeof auditLog;
   auth: typeof auth;
   commands: typeof commands;
   guildSettings: typeof guildSettings;
