@@ -54,5 +54,20 @@ export default defineSchema({
   guildSettings: defineTable({
     guildDiscordId: v.string(),
     prefix: v.string()
-  }).index("by_guild", ["guildDiscordId"])
+  }).index("by_guild", ["guildDiscordId"]),
+
+  auditLog: defineTable({
+    guildDiscordId: v.string(),
+    action: v.string(),
+    source: v.string(),
+    actorId: v.string(),
+    actorName: v.optional(v.string()),
+    targetType: v.optional(v.string()),
+    targetId: v.optional(v.string()),
+    targetName: v.optional(v.string()),
+    metadata: v.optional(v.any()),
+    timestamp: v.float64()
+  })
+    .index("by_guild", ["guildDiscordId"])
+    .index("by_guild_and_timestamp", ["guildDiscordId", "timestamp"])
 });
