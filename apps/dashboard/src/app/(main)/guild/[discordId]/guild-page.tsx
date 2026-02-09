@@ -3,19 +3,23 @@
 import Link from "next/link";
 import {
   Crown,
-  Settings,
   MessageSquare,
   Terminal,
   Activity,
   Clock,
-  ChevronRight,
-  Circle
+  ScrollText,
+  Monitor,
+  Bot,
+  Hash,
+  Shield,
+  Server
 } from "lucide-react";
 import { useQuery } from "convex/react";
 import { api } from "@ignite-bot/convex";
 
 import { useGuild } from "~/hooks/use-guild";
 import { useGuildPrefix } from "~/hooks/use-guild-prefix";
+import { Badge } from "~/components/ui/badge";
 import { getGuildIconUrl, getGuildInitials } from "~/lib/discord";
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
 
@@ -34,10 +38,38 @@ function formatRelativeTime(timestamp: number): string {
   return `${Math.floor(days / 30)}mo ago`;
 }
 
+const AUDIT_ACTION_LABELS: Record<string, string> = {
+  "command.created": "Created command",
+  "command.updated": "Updated command",
+  "command.deleted": "Deleted command",
+  "guild.prefix_updated": "Changed prefix",
+  "guild.updated": "Guild updated",
+  "guild.bot_joined": "Bot joined",
+  "guild.bot_left": "Bot left",
+  "channel.created": "Channel created",
+  "channel.updated": "Channel updated",
+  "channel.deleted": "Channel deleted",
+  "role.created": "Role created",
+  "role.updated": "Role updated",
+  "role.deleted": "Role deleted"
+};
+
+function getActionIcon(action: string) {
+  if (action.startsWith("command."))
+    return <MessageSquare className="size-4" />;
+  if (action.startsWith("channel.")) return <Hash className="size-4" />;
+  if (action.startsWith("role.")) return <Shield className="size-4" />;
+  return <Server className="size-4" />;
+}
+
 export function GuildPage({ discordId }: { discordId: string }) {
   const { guild } = useGuild(discordId);
   const { prefix, loading: prefixLoading } = useGuildPrefix(discordId);
   const commands = useQuery(api.commands.list, { guildDiscordId: discordId });
+  const auditLogs = useQuery(api.auditLog.list, {
+    guildDiscordId: discordId,
+    limit: 5
+  });
 
   if (!guild) {
     return (
@@ -71,10 +103,6 @@ export function GuildPage({ discordId }: { discordId: string }) {
   const lastUpdated = commands?.length
     ? Math.max(...commands.map((c) => c.updatedAt))
     : null;
-  const recentCommands = commands
-    ? [...commands].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 5)
-    : null;
-
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">
       {/* Guild header */}
@@ -170,93 +198,70 @@ export function GuildPage({ discordId }: { discordId: string }) {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="animate-fade-up stagger-2 mb-8 grid gap-4 sm:grid-cols-2">
-        <Link href={`/guild/${discordId}/commands`}>
-          <div className="border-border/50 bg-card hover:border-primary/30 hover:bg-card/80 group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300">
-            <div className="from-primary/5 pointer-events-none absolute inset-0 bg-linear-to-br via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            <div className="relative flex items-center gap-4">
-              <div className="bg-primary/20 text-primary flex size-12 items-center justify-center rounded-xl">
-                <MessageSquare className="size-6" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-foreground text-lg font-medium">
-                  Custom Commands
-                </h3>
-                <p className="text-muted-foreground mt-0.5 text-sm">
-                  Create and manage commands for your server
-                </p>
-              </div>
-              <ChevronRight className="text-muted-foreground group-hover:text-primary size-5 transition-colors" />
-            </div>
-          </div>
-        </Link>
+      {/* Recent Audit Logs */}
+      <div className="animate-fade-up stagger-2">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-medium">Recent Activity</h2>
+          <Link
+            href={`/guild/${discordId}/audit-log`}
+            className="text-primary text-sm hover:underline"
+          >
+            View all
+          </Link>
+        </div>
 
-        <Link href={`/guild/${discordId}/settings`}>
-          <div className="border-border/50 bg-card hover:border-primary/30 hover:bg-card/80 group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300">
-            <div className="from-primary/5 pointer-events-none absolute inset-0 bg-linear-to-br via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            <div className="relative flex items-center gap-4">
-              <div className="flex size-12 items-center justify-center rounded-xl bg-violet-500/20 text-violet-500">
-                <Settings className="size-6" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-foreground text-lg font-medium">
-                  Server Settings
-                </h3>
-                <p className="text-muted-foreground mt-0.5 text-sm">
-                  Configure prefix and bot settings
-                </p>
-              </div>
-              <ChevronRight className="text-muted-foreground group-hover:text-primary size-5 transition-colors" />
-            </div>
-          </div>
-        </Link>
-      </div>
-
-      {/* Recent Commands */}
-      <div className="animate-fade-up stagger-3">
-        <h2 className="mb-4 text-lg font-medium">Recent Commands</h2>
-
-        {!commands ? (
+        {auditLogs === undefined ? (
           <div className="border-border/50 bg-card space-y-1 rounded-2xl border p-2">
             {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="bg-secondary h-12 animate-pulse rounded-xl"
+                className="bg-secondary h-14 animate-pulse rounded-xl"
               />
             ))}
           </div>
-        ) : recentCommands && recentCommands.length > 0 ? (
-          <div className="border-border/50 bg-card rounded-2xl border p-2">
-            {recentCommands.map((cmd) => (
-              <Link
-                key={cmd._id}
-                href={`/guild/${discordId}/commands/${cmd._id}`}
-                className="hover:bg-secondary/50 flex items-center gap-3 rounded-xl px-4 py-3 transition-colors"
+        ) : auditLogs.length > 0 ? (
+          <div className="border-border/50 bg-card space-y-1 rounded-2xl border p-2">
+            {auditLogs.map((log) => (
+              <div
+                key={log._id}
+                className="flex items-center gap-3 rounded-xl px-4 py-3"
               >
-                <Circle
-                  className={`size-2 shrink-0 ${cmd.enabled ? "fill-emerald-500 text-emerald-500" : "fill-muted text-muted"}`}
-                />
-                <code className="text-foreground text-sm font-medium">
-                  {prefix}
-                  {cmd.name}
-                </code>
-                <span className="text-muted-foreground ml-auto text-xs">
-                  {formatRelativeTime(cmd.updatedAt)}
-                </span>
-              </Link>
+                <div className="bg-secondary text-muted-foreground flex size-8 shrink-0 items-center justify-center rounded-lg">
+                  {getActionIcon(log.action)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-foreground text-sm font-medium">
+                      {AUDIT_ACTION_LABELS[log.action] ?? log.action}
+                    </span>
+                    {log.targetName && (
+                      <code className="bg-secondary text-primary truncate rounded px-1.5 py-0.5 text-xs font-medium">
+                        {log.targetName}
+                      </code>
+                    )}
+                  </div>
+                  <span className="text-muted-foreground/60 text-xs">
+                    {log.actorName ?? log.actorId} · {formatRelativeTime(log.timestamp)}
+                  </span>
+                </div>
+                <Badge
+                  variant="secondary"
+                  className="shrink-0 gap-1 text-[10px] uppercase"
+                >
+                  {log.source === "dashboard" ? (
+                    <Monitor className="size-3" />
+                  ) : (
+                    <Bot className="size-3" />
+                  )}
+                  {log.source}
+                </Badge>
+              </div>
             ))}
           </div>
         ) : (
           <div className="border-border/50 bg-card rounded-2xl border p-8 text-center">
-            <MessageSquare className="text-muted-foreground/50 mx-auto mb-3 size-8" />
-            <p className="text-muted-foreground text-sm">No commands yet</p>
-            <Link
-              href={`/guild/${discordId}/commands`}
-              className="text-primary mt-2 inline-block text-sm hover:underline"
-            >
-              Create your first command
-            </Link>
+            <ScrollText className="text-muted-foreground/50 mx-auto mb-3 size-8" />
+            <p className="text-muted-foreground text-sm">No activity yet</p>
           </div>
         )}
       </div>
