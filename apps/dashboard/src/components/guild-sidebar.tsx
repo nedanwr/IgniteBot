@@ -72,6 +72,12 @@ export function GuildSidebar({
         match: "exact"
       },
       {
+        label: "Audit Log",
+        href: `${basePath}/audit-log`,
+        icon: <ScrollText className="size-4" />,
+        match: "startsWith"
+      },
+      {
         label: "Settings",
         href: `${basePath}/settings`,
         icon: <Settings className="size-4" />,
@@ -83,12 +89,6 @@ export function GuildSidebar({
         icon: <MessageSquare className="size-4" />,
         match: "startsWith",
         section: "Server Management"
-      },
-      {
-        label: "Audit Log",
-        href: `${basePath}/audit-log`,
-        icon: <ScrollText className="size-4" />,
-        match: "startsWith"
       },
       {
         label: "Auto Moderation",
