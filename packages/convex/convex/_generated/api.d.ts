@@ -16,6 +16,7 @@ import type * as guilds from "../guilds.js";
 import type * as http from "../http.js";
 import type * as lib_access from "../lib/access.js";
 import type * as lib_crypto from "../lib/crypto.js";
+import type * as lib_plugins from "../lib/plugins.js";
 import type * as users from "../users.js";
 
 import type {
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   "lib/access": typeof lib_access;
   "lib/crypto": typeof lib_crypto;
+  "lib/plugins": typeof lib_plugins;
   users: typeof users;
 }>;
 
