@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { Sparkles, Loader2 } from "lucide-react";
+import Link from "next/link";
 
 import { Button } from "~/components/ui/button";
 
@@ -53,7 +54,15 @@ export function AuthForm() {
         </Button>
 
         <p className="text-muted-foreground mt-6 text-sm">
-          By signing in, you agree to our Terms of Service and Privacy Policy.
+          By signing in, you agree to our{" "}
+          <Link href="/terms" className="text-primary hover:underline">
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="text-primary hover:underline">
+            Privacy Policy
+          </Link>
+          .
         </p>
       </div>
 
