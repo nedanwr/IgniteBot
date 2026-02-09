@@ -65,6 +65,15 @@ http.route({
       return new Response("Unauthorized", { status: 401 });
     }
     const { guildDiscordId, messageContent } = await request.json();
+
+    const pluginEnabled = await ctx.runQuery(
+      internal.guildSettings.isPluginEnabledQuery,
+      { guildDiscordId, pluginId: "customCommands" }
+    );
+    if (!pluginEnabled) {
+      return Response.json({ result: null });
+    }
+
     const result = await ctx.runQuery(
       internal.guildSettings.resolveCommand,
       { guildDiscordId, messageContent }
@@ -81,8 +90,33 @@ http.route({
       return new Response("Unauthorized", { status: 401 });
     }
     const body = await request.json();
+
+    const pluginEnabled = await ctx.runQuery(
+      internal.guildSettings.isPluginEnabledQuery,
+      { guildDiscordId: body.guildDiscordId, pluginId: "auditLog" }
+    );
+    if (!pluginEnabled) {
+      return Response.json({ success: false, reason: "plugin_disabled" });
+    }
+
     await ctx.runMutation(internal.auditLog.create, body);
     return Response.json({ success: true });
+  }),
+});
+
+http.route({
+  path: "/bot/plugin-enabled",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    if (!verifyBotSecret(request)) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+    const { guildDiscordId, pluginId } = await request.json();
+    const enabled = await ctx.runQuery(
+      internal.guildSettings.isPluginEnabledQuery,
+      { guildDiscordId, pluginId }
+    );
+    return Response.json({ enabled });
   }),
 });
 
