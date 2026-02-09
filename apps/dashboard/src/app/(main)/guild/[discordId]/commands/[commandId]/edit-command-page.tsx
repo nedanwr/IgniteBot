@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Pencil } from "lucide-react";
-import { useQuery, useConvex } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "@ignite-bot/convex";
 import type { GenericId } from "convex/values";
 import { useEffect } from "react";
+
 import { useGuild } from "~/stores/guild-store";
 import { useGuildPrefix } from "~/stores/guild-prefix-store";
-
 import { CommandEditor } from "~/components/command-editor";
 
 export function EditCommandPage({
@@ -20,16 +20,11 @@ export function EditCommandPage({
   commandId: string;
 }) {
   const router = useRouter();
-  const convex = useConvex();
   const { guild } = useGuild(discordId);
   const command = useQuery(api.commands.get, {
     id: commandId as GenericId<"commands">
   });
-  const { prefix, fetchPrefix } = useGuildPrefix(discordId);
-
-  useEffect(() => {
-    void fetchPrefix(discordId, convex);
-  }, [convex, fetchPrefix, discordId]);
+  const { prefix } = useGuildPrefix(discordId);
 
   // Redirect if command not found
   useEffect(() => {
