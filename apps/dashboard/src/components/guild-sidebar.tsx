@@ -78,7 +78,7 @@ export function GuildSidebar({
         match: "startsWith"
       },
       {
-        label: "Server Settings",
+        label: "Settings",
         href: `${basePath}/settings`,
         icon: <Settings className="size-4" />,
         match: "startsWith"
