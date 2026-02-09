@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
 
 const Toaster = ({ ...props }: ToasterProps) => {
@@ -11,7 +12,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
           "--normal-bg": "hsl(var(--card))",
           "--normal-text": "hsl(var(--foreground))",
           "--normal-border": "hsl(var(--border))"
-        } as React.CSSProperties
+        } as CSSProperties
       }
       toastOptions={{
         classNames: {
